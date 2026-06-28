@@ -1224,6 +1224,7 @@ export default function CartPage() {
                     <span className="text-primary font-heading">₹{cartTotal.toLocaleString()}</span>
                 </div>
               </div>
+            </div>
             </motion.div>
           )}
 
