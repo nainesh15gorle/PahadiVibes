@@ -4,7 +4,7 @@ import type { NextRequest } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
 const isPublicRoute = (path: string) => {
-  const publicRoutes = ['/sign-in', '/sign-up', '/admin/login', '/sso-callback'];
+  const publicRoutes = ['/admin/login'];
   return publicRoutes.some(route => path.startsWith(route));
 };
 
@@ -14,7 +14,6 @@ const isApiAdminRoute = (path: string) => {
   if (path === '/api/upload') return true;
   return path.startsWith('/api/products') || path.startsWith('/api/categories');
 };
-const isApiUserRoute = (path: string) => path.startsWith('/api/wishlist') || path.startsWith('/api/orders/user') || path.startsWith('/api/addresses');
 
 export async function middleware(req: NextRequest) {
   const path = req.nextUrl.pathname;
@@ -76,13 +75,6 @@ export async function middleware(req: NextRequest) {
     const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL || process.env.ADMIN_EMAIL || "admin@example.com";
     if (user.email !== adminEmail) {
       return new NextResponse("Forbidden: Admin access required", { status: 403 });
-    }
-  }
-
-  // For API User requests
-  if (isApiUserRoute(path)) {
-    if (!token) {
-      return new NextResponse("Unauthorized", { status: 401 });
     }
   }
 

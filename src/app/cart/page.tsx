@@ -10,40 +10,24 @@ import {
   ChevronRight, AlertCircle, ShoppingCart, MapPin, 
   Edit, Check, User, Mail, Phone, Globe
 } from "lucide-react";
-import { useAuth } from "@/hooks/useAuth";
 import { useCart } from "@/hooks/useCart";
 import { Button } from "@/components/ui/button";
 import { MandalaLoader } from "@/components/ui/mandala-loader";
 import { useToast } from "@/components/ui/Toast";
 
-const formatErrorMsg = (error: any): string => {
-  if (!error) return "";
-  if (Array.isArray(error)) {
-    return error.map((err: any) => err.message || JSON.stringify(err)).join("\n");
-  }
-  if (typeof error === "object") {
-    return error.message || JSON.stringify(error);
-  }
-  return String(error);
-};
-
 export default function CartPage() {
   const { cart, setCart, updateQuantity, removeFromCart, clearCart, cartTotal, totalItems, isLoaded } = useCart();
-  const { user, profile } = useAuth();
   const { toast } = useToast();
   
-  // Steps: "cart" | "shipping" | "review" | "success" (we bypass separate "payment" view)
+  // Steps: "cart" | "shipping" | "review" | "success"
   const [step, setStep] = useState<"cart" | "shipping" | "review" | "success">("cart");
   const [loading, setLoading] = useState(false);
   const [orderError, setOrderError] = useState<string | null>(null);
   const [createdOrder, setCreatedOrder] = useState<any>(null);
 
-  // Address Management States
-  const [addresses, setAddresses] = useState<any[]>([]);
-  const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
+  // Guest Address State
   const [guestAddress, setGuestAddress] = useState<any | null>(null);
-  const [isAddingAddress, setIsAddingAddress] = useState(true);
-  const [editingAddress, setEditingAddress] = useState<any | null>(null);
+  const [isEditingAddress, setIsEditingAddress] = useState(true);
   
   const [addressForm, setAddressForm] = useState({
     customerName: "",
@@ -56,7 +40,6 @@ export default function CartPage() {
     pincode: "",
     landmark: "",
     country: "India",
-    isDefault: false,
   });
 
   const [addressFormErrors, setAddressFormErrors] = useState<Record<string, string>>({});
@@ -75,31 +58,6 @@ export default function CartPage() {
       document.body.appendChild(script);
     });
   };
-
-  // Load user's saved addresses
-  useEffect(() => {
-    if (user) {
-      setIsAddingAddress(false);
-      fetch("/api/addresses")
-        .then((res) => res.json())
-        .then((data) => {
-          if (data.success && data.data) {
-            setAddresses(data.data);
-            // Select default address if it exists
-            const defaultAddress = data.data.find((addr: any) => addr.isDefault);
-            if (defaultAddress) {
-              setSelectedAddressId(defaultAddress.id);
-            } else if (data.data.length > 0) {
-              setSelectedAddressId(data.data[0].id);
-            }
-          }
-        })
-        .catch((err) => console.error("Failed to fetch addresses:", err));
-    } else {
-      // Guest Checkout form defaults open
-      setIsAddingAddress(true);
-    }
-  }, [user]);
 
   // Fetch latest stock for all items in the cart on load
   const stockSyncedRef = useRef(false);
@@ -150,55 +108,12 @@ export default function CartPage() {
   }, [isLoaded, cart, setCart]);
 
   // Address Form Actions
-  const openAddAddressForm = () => {
-    setAddressForm({
-      customerName: profile?.full_name || "",
-      email: profile?.email || "",
-      phone: profile?.phone || "",
-      addressLine1: "",
-      addressLine2: "",
-      city: "",
-      state: "",
-      pincode: "",
-      landmark: "",
-      country: "India",
-      isDefault: addresses.length === 0,
-    });
-    setAddressFormErrors({});
-    setEditingAddress(null);
-    setIsAddingAddress(true);
-  };
-
-  const openEditAddressForm = (address: any) => {
-    setAddressForm({
-      customerName: address.fullName || address.customerName || "",
-      email: address.email || profile?.email || "",
-      phone: address.phone || "",
-      addressLine1: address.addressLine1 || "",
-      addressLine2: address.addressLine2 || "",
-      city: address.city || "",
-      state: address.state || "",
-      pincode: address.pincode || "",
-      landmark: address.landmark || "",
-      country: address.country || "India",
-      isDefault: !!address.isDefault,
-    });
-    setAddressFormErrors({});
-    setEditingAddress(address);
-    setIsAddingAddress(true);
-  };
-
   const handleAddressInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setAddressForm((prev) => ({ ...prev, [name]: value }));
     if (addressFormErrors[name]) {
       setAddressFormErrors((prev) => ({ ...prev, [name]: "" }));
     }
-  };
-
-  const handleAddressCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, checked } = e.target;
-    setAddressForm((prev) => ({ ...prev, [name]: checked }));
   };
 
   const validateAddressForm = () => {
@@ -227,97 +142,16 @@ export default function CartPage() {
     return Object.keys(errors).length === 0;
   };
 
-  const handleAddressSubmit = async (e: React.FormEvent) => {
+  const handleAddressSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!validateAddressForm()) return;
 
-    if (!user) {
-      setGuestAddress({
-        ...addressForm,
-        fullName: addressForm.customerName,
-      });
-      setIsAddingAddress(false);
-      setStep("review");
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const url = editingAddress ? `/api/addresses/${editingAddress.id}` : "/api/addresses";
-      const method = editingAddress ? "PUT" : "POST";
-      
-      const res = await fetch(url, {
-        method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(addressForm),
-      });
-      const data = await res.json();
-      
-      if (data.success) {
-        // Reload all addresses to ensure state sync with DB
-        const addRes = await fetch("/api/addresses");
-        const addData = await addRes.json();
-        if (addData.success && addData.data) {
-          setAddresses(addData.data);
-          
-          if (editingAddress) {
-            setSelectedAddressId(editingAddress.id);
-          } else if (data.data) {
-            setSelectedAddressId(data.data.id);
-          }
-        }
-        setIsAddingAddress(false);
-        setEditingAddress(null);
-      } else {
-        alert(formatErrorMsg(data.error) || "Failed to save address");
-      }
-    } catch (err) {
-      console.error(err);
-      alert("Error occurred while saving address");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleDeleteAddress = async (id: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (!confirm("Are you sure you want to delete this address?")) return;
-    
-    try {
-      const res = await fetch(`/api/addresses/${id}`, { method: "DELETE" });
-      const data = await res.json();
-      if (data.success) {
-        setAddresses((prev) => prev.filter((addr) => addr.id !== id));
-        if (selectedAddressId === id) {
-          setSelectedAddressId(null);
-        }
-      } else {
-        alert(formatErrorMsg(data.error) || "Failed to delete address");
-      }
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  const handleSetDefaultAddress = async (addr: any, e: React.MouseEvent) => {
-    e.stopPropagation();
-    try {
-      const res = await fetch(`/api/addresses/${addr.id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...addr, isDefault: true }),
-      });
-      const data = await res.json();
-      if (data.success) {
-        const addRes = await fetch("/api/addresses");
-        const addData = await addRes.json();
-        if (addData.success && addData.data) {
-          setAddresses(addData.data);
-        }
-      }
-    } catch (err) {
-      console.error(err);
-    }
+    setGuestAddress({
+      ...addressForm,
+      fullName: addressForm.customerName,
+    });
+    setIsEditingAddress(false);
+    setStep("review");
   };
 
   const handlePlaceOrder = async () => {
@@ -332,8 +166,7 @@ export default function CartPage() {
       return;
     }
 
-    const currentAddress = user ? addresses.find((addr) => addr.id === selectedAddressId) : guestAddress;
-    if (!currentAddress) {
+    if (!guestAddress) {
       setOrderError("Please specify a shipping address.");
       toast("Please specify a shipping address.", "error");
       setLoading(false);
@@ -386,20 +219,20 @@ export default function CartPage() {
                 razorpay_order_id: response.razorpay_order_id,
                 razorpay_signature: response.razorpay_signature,
                 customerDetails: {
-                  fullName: currentAddress.fullName || currentAddress.customerName,
-                  email: currentAddress.email,
-                  phone: currentAddress.phone,
-                  addressLine1: currentAddress.addressLine1,
-                  addressLine2: currentAddress.addressLine2 || "",
-                  city: currentAddress.city,
-                  state: currentAddress.state,
-                  pincode: currentAddress.pincode,
-                  landmark: currentAddress.landmark || "",
-                  country: currentAddress.country || "India"
+                  fullName: guestAddress.fullName || guestAddress.customerName,
+                  email: guestAddress.email,
+                  phone: guestAddress.phone,
+                  addressLine1: guestAddress.addressLine1,
+                  addressLine2: guestAddress.addressLine2 || "",
+                  city: guestAddress.city,
+                  state: guestAddress.state,
+                  pincode: guestAddress.pincode,
+                  landmark: guestAddress.landmark || "",
+                  country: guestAddress.country || "India"
                 },
                 items: itemsPayload,
                 total: cartTotal,
-                userId: user ? user.id : "anonymous"
+                userId: null
               })
             });
 
@@ -422,9 +255,9 @@ export default function CartPage() {
           }
         },
         prefill: {
-          name: currentAddress.fullName || currentAddress.customerName,
-          email: currentAddress.email,
-          contact: currentAddress.phone,
+          name: guestAddress.fullName || guestAddress.customerName,
+          email: guestAddress.email,
+          contact: guestAddress.phone,
         },
         theme: {
           color: "#854d0e" // Gold luxury brand color matching Pahadi Vibes
@@ -459,8 +292,6 @@ export default function CartPage() {
       </main>
     );
   }
-
-  const selectedAddress = user ? addresses.find((addr) => addr.id === selectedAddressId) : guestAddress;
 
   // Horizontal Step Progress Indicator
   const checkoutSteps = [
@@ -503,10 +334,12 @@ export default function CartPage() {
                     <button
                       disabled={index > currentStepIndex + 1}
                       onClick={() => {
-                        // Allow navigation back to any previous step, or next step if validated
                         if (index === 0) setStep("cart");
-                        else if (index === 1 && currentStepIndex >= 1) setStep("shipping");
-                        else if (index === 2 && selectedAddressId) setStep("review");
+                        else if (index === 1 && currentStepIndex >= 1) {
+                          setIsEditingAddress(true);
+                          setStep("shipping");
+                        }
+                        else if (index === 2 && guestAddress) setStep("review");
                       }}
                       className={`w-8 h-8 rounded-none border flex items-center justify-center text-xs font-bold transition-all duration-500 ${
                         isActive 
@@ -721,22 +554,13 @@ export default function CartPage() {
                       </button>
                       <h1 className="font-heading text-2xl font-bold">Shipping Address</h1>
                     </div>
-                    {!isAddingAddress && (
-                      <Button 
-                        onClick={openAddAddressForm}
-                        size="sm"
-                        className="rounded-none bg-primary text-primary-foreground hover:bg-primary/90 text-xs font-bold tracking-wider uppercase h-9 px-4"
-                      >
-                        Add New Address
-                      </Button>
-                    )}
                   </div>
 
-                  {isAddingAddress ? (
-                    /* ADD/EDIT ADDRESS FORM */
+                  {isEditingAddress || !guestAddress ? (
+                    /* GUEST ADDRESS FORM */
                     <form onSubmit={handleAddressSubmit} className="space-y-6">
                       <h2 className="text-lg font-bold tracking-wide border-b border-border/40 pb-2">
-                        {editingAddress ? "Edit Shipping Address" : "Add New Shipping Address"}
+                        Guest Shipping Address
                       </h2>
                       
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
@@ -893,190 +717,80 @@ export default function CartPage() {
                         </div>
                       </div>
 
-                      {/* Default checkbox */}
-                      {user && (
-                        <div className="flex items-center gap-2">
-                          <input
-                            type="checkbox"
-                            id="isDefault"
-                            name="isDefault"
-                            checked={addressForm.isDefault}
-                            onChange={handleAddressCheckboxChange}
-                            className="h-4.5 w-4.5 accent-primary border-border focus:ring-primary"
-                          />
-                          <label htmlFor="isDefault" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground cursor-pointer select-none">Set as default shipping address</label>
-                        </div>
-                      )}
-
                       <div className="flex gap-4 border-t border-border/40 pt-6">
                         <Button 
                           type="submit"
                           disabled={loading}
                           className="px-8 h-12 bg-primary hover:bg-primary/95 text-primary-foreground font-semibold rounded-none uppercase tracking-widest text-xs flex items-center gap-2 shadow-lg shadow-primary/10"
                         >
-                          {loading ? (
-                            <>
-                              <span className="w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
-                              Saving...
-                            </>
-                          ) : "Save Address"}
+                          Confirm & Continue
                         </Button>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          onClick={() => {
-                            setIsAddingAddress(false);
-                            setEditingAddress(null);
-                          }}
-                          className="px-8 h-12 border-border text-muted-foreground hover:bg-black/5 rounded-none uppercase tracking-widest text-xs"
-                        >
-                          Cancel
-                        </Button>
+                        {guestAddress && (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => {
+                              setIsEditingAddress(false);
+                            }}
+                            className="px-8 h-12 border-border text-muted-foreground hover:bg-black/5 rounded-none uppercase tracking-widest text-xs"
+                          >
+                            Cancel
+                          </Button>
+                        )}
                       </div>
                     </form>
                   ) : (
-                    /* ADDRESS LIST */
+                    /* GUEST ADDRESS CARD DISPLAY */
                     <div className="space-y-6">
-                      {((!user && !guestAddress) || (user && addresses.length === 0)) ? (
-                        <div className="text-center py-12 border border-dashed border-border/80 p-8">
-                          <MapPin className="w-10 h-10 text-muted-foreground/60 mx-auto mb-4" />
-                          <h3 className="font-heading text-lg font-bold text-foreground mb-2">No Saved Addresses</h3>
-                          <p className="text-muted-foreground text-sm max-w-sm mx-auto mb-6">You haven&apos;t saved any shipping addresses yet. Please add a shipping address to proceed with checkout.</p>
-                          <Button 
-                            onClick={openAddAddressForm}
-                            className="bg-primary text-primary-foreground rounded-none px-6 h-11 text-xs font-bold tracking-widest uppercase"
-                          >
-                            Add Shipping Address
-                          </Button>
-                        </div>
-                      ) : !user && guestAddress ? (
-                        <div className="grid grid-cols-1 gap-4">
-                          <div
-                            className="p-5 border border-primary bg-primary/[0.03] shadow-md relative transition-all duration-300 flex flex-col justify-between rounded-none text-left"
-                          >
-                            <div>
-                              <div className="flex items-start justify-between gap-2 mb-3">
-                                <div className="flex flex-col gap-1">
-                                  <h3 className="font-bold text-sm text-foreground leading-none">{guestAddress.customerName}</h3>
-                                  <span className="text-[10px] text-muted-foreground font-medium">{guestAddress.email}</span>
-                                </div>
-                                <span className="bg-emerald-600/10 text-emerald-600 border border-emerald-600/20 text-[8px] font-bold px-1.5 py-0.5 uppercase tracking-wider leading-none">
-                                  Selected (Guest)
-                                </span>
+                      <div className="grid grid-cols-1 gap-4">
+                        <div className="p-5 border border-primary bg-primary/[0.03] shadow-md relative transition-all duration-300 flex flex-col justify-between rounded-none text-left">
+                          <div>
+                            <div className="flex items-start justify-between gap-2 mb-3">
+                              <div className="flex flex-col gap-1">
+                                <h3 className="font-bold text-sm text-foreground leading-none">{guestAddress.customerName}</h3>
+                                <span className="text-[10px] text-muted-foreground font-medium">{guestAddress.email}</span>
                               </div>
-
-                              <div className="text-xs text-muted-foreground/90 space-y-0.5 leading-relaxed font-light mb-6">
-                                <p>{guestAddress.addressLine1}</p>
-                                {guestAddress.addressLine2 && <p>{guestAddress.addressLine2}</p>}
-                                {guestAddress.landmark && <p className="text-primary/70 font-normal">Landmark: {guestAddress.landmark}</p>}
-                                <p>{guestAddress.city}, {guestAddress.state} - <span className="font-semibold">{guestAddress.pincode}</span></p>
-                                <p className="flex items-center gap-1.5 mt-2 font-medium text-foreground/80"><Phone className="w-3 h-3 text-primary" /> {guestAddress.phone}</p>
-                              </div>
+                              <span className="bg-primary/10 text-primary border border-primary/20 text-[8px] font-bold px-1.5 py-0.5 uppercase tracking-wider leading-none">
+                                Selected Shipping Address
+                              </span>
                             </div>
 
-                            <div className="flex items-center gap-3 border-t border-border/40 pt-3 mt-auto">
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  openEditAddressForm(guestAddress);
-                                }}
-                                className="text-[10px] text-muted-foreground hover:text-primary transition-colors font-bold uppercase tracking-wider flex items-center gap-1"
-                              >
-                                <Edit className="w-3 h-3" /> Edit Address
-                              </button>
+                            <div className="text-xs text-muted-foreground/90 space-y-0.5 leading-relaxed font-light mb-6">
+                              <p>{guestAddress.addressLine1}</p>
+                              {guestAddress.addressLine2 && <p>{guestAddress.addressLine2}</p>}
+                              {guestAddress.landmark && <p className="text-primary/70 font-normal">Landmark: {guestAddress.landmark}</p>}
+                              <p>{guestAddress.city}, {guestAddress.state} - <span className="font-semibold">{guestAddress.pincode}</span></p>
+                              <p className="flex items-center gap-1.5 mt-2 font-medium text-foreground/80"><Phone className="w-3 h-3 text-primary" /> {guestAddress.phone}</p>
                             </div>
                           </div>
-                        </div>
-                      ) : (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          {addresses.map((addr) => {
-                            const isSelected = selectedAddressId === addr.id;
-                            return (
-                              <div
-                                key={addr.id}
-                                onClick={() => setSelectedAddressId(addr.id)}
-                                className={`p-5 border cursor-pointer relative transition-all duration-300 flex flex-col justify-between rounded-none text-left h-full ${
-                                  isSelected 
-                                    ? 'border-primary bg-primary/[0.03] shadow-md' 
-                                    : 'border-border/60 hover:border-primary/30 bg-background/50 hover:bg-background/80'
-                                }`}
-                              >
-                                <div>
-                                  <div className="flex items-start justify-between gap-2 mb-3">
-                                    <div className="flex flex-col gap-1">
-                                      <h3 className="font-bold text-sm text-foreground leading-none">{addr.fullName || addr.customerName}</h3>
-                                      <span className="text-[10px] text-muted-foreground font-medium">{addr.email || profile?.email}</span>
-                                    </div>
-                                    <div className="flex gap-1.5 flex-shrink-0">
-                                      {addr.isDefault && (
-                                        <span className="bg-primary/10 text-primary border border-primary/20 text-[8px] font-bold px-1.5 py-0.5 uppercase tracking-wider leading-none">
-                                          Default
-                                        </span>
-                                      )}
-                                      {isSelected && (
-                                        <span className="bg-emerald-600/10 text-emerald-600 border border-emerald-600/20 text-[8px] font-bold px-1.5 py-0.5 uppercase tracking-wider leading-none">
-                                          Selected
-                                        </span>
-                                      )}
-                                    </div>
-                                  </div>
- 
-                                  <div className="text-xs text-muted-foreground/90 space-y-0.5 leading-relaxed font-light mb-6">
-                                    <p>{addr.addressLine1}</p>
-                                    {addr.addressLine2 && <p>{addr.addressLine2}</p>}
-                                    {addr.landmark && <p className="text-primary/70 font-normal">Landmark: {addr.landmark}</p>}
-                                    <p>{addr.city}, {addr.state} - <span className="font-semibold">{addr.pincode}</span></p>
-                                    <p className="flex items-center gap-1.5 mt-2 font-medium text-foreground/80"><Phone className="w-3 h-3 text-primary" /> {addr.phone}</p>
-                                  </div>  </div>
 
-                                <div className="flex items-center gap-3 border-t border-border/40 pt-3 mt-auto">
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      openEditAddressForm(addr);
-                                    }}
-                                    className="text-[10px] text-muted-foreground hover:text-primary transition-colors font-bold uppercase tracking-wider flex items-center gap-1"
-                                  >
-                                    <Edit className="w-3 h-3" /> Edit
-                                  </button>
-                                  <button
-                                    onClick={(e) => handleDeleteAddress(addr.id, e)}
-                                    className="text-[10px] text-destructive hover:underline transition-colors font-bold uppercase tracking-wider flex items-center gap-1"
-                                  >
-                                    <Trash2 className="w-3 h-3" /> Delete
-                                  </button>
-                                  {!addr.isDefault && (
-                                    <button
-                                      onClick={(e) => handleSetDefaultAddress(addr, e)}
-                                      className="text-[10px] text-primary hover:underline transition-colors font-bold uppercase tracking-wider ml-auto"
-                                    >
-                                      Set as Default
-                                    </button>
-                                  )}
-                                </div>
-                              </div>
-                            );
-                          })}
+                          <div className="flex items-center gap-3 border-t border-border/40 pt-3 mt-auto">
+                            <button
+                              onClick={() => {
+                                setIsEditingAddress(true);
+                              }}
+                              className="text-[10px] text-muted-foreground hover:text-primary transition-colors font-bold uppercase tracking-wider flex items-center gap-1 bg-transparent border-0 cursor-pointer"
+                            >
+                              <Edit className="w-3 h-3" /> Edit Address Details
+                            </button>
+                          </div>
                         </div>
-                      )}
+                      </div>
 
                       <div className="flex justify-between border-t border-border/40 pt-6 mt-4">
                         <button 
                           onClick={() => setStep("cart")}
-                          className="text-sm text-muted-foreground hover:text-primary transition-colors flex items-center gap-1 font-medium"
+                          className="text-sm text-muted-foreground hover:text-primary transition-colors flex items-center gap-1 font-medium bg-transparent border-0 cursor-pointer"
                         >
                           <ArrowLeft className="w-4 h-4" /> Edit Cart
                         </button>
                         
-                        {((user && addresses.length > 0) || (!user && guestAddress)) && (
-                          <Button 
-                            disabled={user ? !selectedAddressId : !guestAddress}
-                            onClick={() => setStep("review")}
-                            className="h-12 px-10 bg-primary hover:bg-primary/95 text-primary-foreground font-semibold rounded-none uppercase tracking-widest text-xs shadow-lg shadow-primary/20 flex items-center gap-2"
-                          >
-                            Proceed to Review <ChevronRight className="w-4 h-4" />
-                          </Button>
-                        )}
+                        <Button 
+                          onClick={() => setStep("review")}
+                          className="h-12 px-10 bg-primary hover:bg-primary/95 text-primary-foreground font-semibold rounded-none uppercase tracking-widest text-xs shadow-lg shadow-primary/20 flex items-center gap-2"
+                        >
+                          Proceed to Review <ChevronRight className="w-4 h-4" />
+                        </Button>
                       </div>
                     </div>
                   )}
@@ -1094,7 +808,7 @@ export default function CartPage() {
                         <div className="relative w-12 h-12 bg-card border border-border/40 overflow-hidden rounded flex-shrink-0">
                           <Image src={item.image || "https://images.unsplash.com/photo-1549469742-1e9d89d46d0a?q=80&w=100&auto=format&fit=crop"} alt={item.name} fill className="object-cover" />
                         </div>
-                        <div className="flex-1 min-w-0">
+                        <div className="flex-1 min-w-0 text-left">
                           <h4 className="text-sm font-bold truncate text-foreground">{item.name}</h4>
                           <p className="text-xs text-muted-foreground mt-0.5">Qty: {item.quantity} × ₹{item.price.toLocaleString()}</p>
                         </div>
@@ -1113,7 +827,7 @@ export default function CartPage() {
           )}
 
           {/* STEP 3: ORDER REVIEW VIEW */}
-          {cart.length > 0 && step === "review" && selectedAddress && (
+          {cart.length > 0 && step === "review" && guestAddress && (
             <motion.div 
               key="review"
               initial={{ opacity: 0, x: 50 }}
@@ -1127,27 +841,31 @@ export default function CartPage() {
                   <div className="flex justify-between items-center border-b border-border pb-3 mb-4">
                     <h2 className="font-heading text-xl font-bold">Shipping Address Details</h2>
                     <button 
-                      onClick={() => setStep("shipping")}
-                      className="text-xs text-primary hover:underline font-bold uppercase tracking-wider flex items-center gap-1"
+                      onClick={() => {
+                        setIsEditingAddress(true);
+                        setStep("shipping");
+                      }}
+                      className="text-xs text-primary hover:underline font-bold uppercase tracking-wider flex items-center gap-1 bg-transparent border-0 cursor-pointer"
                     >
                       <Edit className="w-3.5 h-3.5" /> Edit
                     </button>
-                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 text-sm text-foreground/80 leading-relaxed font-light">
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 text-sm text-foreground/80 leading-relaxed font-light text-left">
                     <div className="space-y-1">
                       <span className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">Recipient</span>
-                      <p className="font-bold text-foreground">{selectedAddress.fullName || selectedAddress.customerName}</p>
-                      <p className="flex items-center gap-1.5"><Phone className="w-3.5 h-3.5 text-primary" /> {selectedAddress.phone}</p>
-                      <p className="flex items-center gap-1.5"><Mail className="w-3.5 h-3.5 text-primary" /> {profile?.email || selectedAddress.email || user?.email || ""}</p>
+                      <p className="font-bold text-foreground">{guestAddress.fullName || guestAddress.customerName}</p>
+                      <p className="flex items-center gap-1.5"><Phone className="w-3.5 h-3.5 text-primary" /> {guestAddress.phone}</p>
+                      <p className="flex items-center gap-1.5"><Mail className="w-3.5 h-3.5 text-primary" /> {guestAddress.email}</p>
                     </div>
  
                     <div className="space-y-1">
                       <span className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">Delivery Location</span>
-                      <p>{selectedAddress.addressLine1}</p>
-                      {selectedAddress.addressLine2 && <p>{selectedAddress.addressLine2}</p>}
-                      {selectedAddress.landmark && <p className="text-primary/70">Landmark: {selectedAddress.landmark}</p>}
-                      <p>{selectedAddress.city}, {selectedAddress.state} - <span className="font-semibold">{selectedAddress.pincode}</span></p>
+                      <p>{guestAddress.addressLine1}</p>
+                      {guestAddress.addressLine2 && <p>{guestAddress.addressLine2}</p>}
+                      {guestAddress.landmark && <p className="text-primary/70">Landmark: {guestAddress.landmark}</p>}
+                      <p>{guestAddress.city}, {guestAddress.state} - <span className="font-semibold">{guestAddress.pincode}</span></p>
                     </div>
-                  </div>         </div>
+                  </div>
                 </div>
 
                 {/* Items Review */}
@@ -1161,7 +879,7 @@ export default function CartPage() {
                           <div className="relative w-16 h-16 bg-card border border-border/40 overflow-hidden rounded-none flex-shrink-0">
                             <Image src={item.image || "https://images.unsplash.com/photo-1549469742-1e9d89d46d0a?q=80&w=150&auto=format&fit=crop"} alt={item.name} fill className="object-cover" />
                           </div>
-                          <div>
+                          <div className="text-left">
                             <h4 className="font-bold text-base text-foreground leading-snug">{item.name}</h4>
                             <span className="text-xs text-primary font-semibold">₹{item.price.toLocaleString()}</span>
                           </div>
@@ -1178,7 +896,7 @@ export default function CartPage() {
                   <div className="flex justify-between border-t border-border/40 pt-6 mt-4">
                     <button 
                       onClick={() => setStep("shipping")}
-                      className="text-sm text-muted-foreground hover:text-primary transition-colors flex items-center gap-1 font-medium"
+                      className="text-sm text-muted-foreground hover:text-primary transition-colors flex items-center gap-1 font-medium bg-transparent border-0 cursor-pointer"
                     >
                       <ArrowLeft className="w-4 h-4" /> Shipping Address
                     </button>
@@ -1222,9 +940,9 @@ export default function CartPage() {
                   <div className="border-t border-border pt-4 flex justify-between font-bold text-lg">
                     <span>Total Amount</span>
                     <span className="text-primary font-heading">₹{cartTotal.toLocaleString()}</span>
+                  </div>
                 </div>
               </div>
-            </div>
             </motion.div>
           )}
 

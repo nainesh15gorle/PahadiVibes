@@ -11,46 +11,78 @@ export async function GET() {
       return NextResponse.json({ success: false, error: authResult.error }, { status: authResult.status });
     }
 
-    // Fetch registered users from public users table instead of Clerk API
-    const { data: users, error: usersError } = await supabaseAdmin
-      .from("users")
+    // Retrieve all orders to aggregate guest customer profiles dynamically
+    const { data: orders, error: ordersError } = await supabaseAdmin
+      .from("orders")
       .select("*")
       .order("created_at", { ascending: false });
 
-    if (usersError) {
-      throw usersError;
+    if (ordersError) {
+      throw ordersError;
     }
 
-    let orders: any[] = [];
-    try {
-      const { data: dbOrders, error } = await supabaseAdmin
-        .from("orders")
-        .select("*");
-      if (error) {
-        throw error;
-      }
-      orders = dbOrders || [];
-    } catch (err) {
-      console.warn("Failed to fetch orders from Supabase:", err);
-    }
+    const customersMap = new Map<string, {
+      id: string;
+      name: string;
+      email: string;
+      imageUrl: string | null;
+      createdAt: string;
+      orderCount: number;
+      totalSpend: number;
+      orders: any[];
+    }>();
 
-    const customers = (users || []).map((user: any) => {
-      const email = user.email || "";
-      const userOrders = orders.filter((o: any) => o.email?.toLowerCase() === email.toLowerCase() || o.user_id === user.id);
-      
-      const totalSpend = userOrders.reduce((sum: number, o: any) => sum + Number(o.total || 0), 0);
+    for (const order of (orders || [])) {
+      const email = (order.email || "").trim().toLowerCase();
+      if (!email) continue;
 
-      return {
-        id: user.id,
-        name: user.full_name || "Anonymous",
-        email,
-        imageUrl: user.profile_image || null,
-        createdAt: user.created_at,
-        orderCount: userOrders.length,
-        totalSpend,
-        orders: userOrders
+      const existing = customersMap.get(email);
+      const orderTotal = Number(order.total || 0);
+
+      // Map DB order schema to frontend schema format if needed
+      const mappedOrder = {
+        id: order.id,
+        orderId: order.order_id,
+        customerName: order.customer_name,
+        email: order.email,
+        phone: order.phone,
+        address: order.address,
+        city: order.city,
+        state: order.state,
+        pincode: order.pincode,
+        total: orderTotal,
+        status: order.status,
+        createdAt: order.created_at,
+        paymentMethod: order.payment_method || "Razorpay",
+        paymentStatus: order.payment_status || "Paid"
       };
-    });
+
+      if (existing) {
+        existing.orderCount += 1;
+        existing.totalSpend += orderTotal;
+        existing.orders.push(mappedOrder);
+        // Capture oldest date as first purchase date
+        if (new Date(order.created_at).getTime() < new Date(existing.createdAt).getTime()) {
+          existing.createdAt = order.created_at;
+        }
+      } else {
+        customersMap.set(email, {
+          id: order.id, // Use order ID as unique customer identifier
+          name: order.customer_name || "Guest Patron",
+          email: order.email,
+          imageUrl: null,
+          createdAt: order.created_at,
+          orderCount: 1,
+          totalSpend: orderTotal,
+          orders: [mappedOrder]
+        });
+      }
+    }
+
+    const customers = Array.from(customersMap.values());
+    
+    // Sort so newest customer (based on first purchase) appears first
+    customers.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
     return NextResponse.json({ success: true, data: customers });
   } catch (error: any) {
