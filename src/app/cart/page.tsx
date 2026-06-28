@@ -1222,8 +1222,8 @@ export default function CartPage() {
                   <div className="border-t border-border pt-4 flex justify-between font-bold text-lg">
                     <span>Total Amount</span>
                     <span className="text-primary font-heading">₹{cartTotal.toLocaleString()}</span>
-                  </div>
                 </div>
+              </div>
             </motion.div>
           )}
 
