@@ -96,7 +96,8 @@ export function Footer() {
               {[
                 { name: 'Contact Us', href: '/contact' },
                 { name: 'Shipping & Returns', href: '/shipping-returns' },
-                { name: 'FAQ', href: '/shipping-returns#faq' }
+                { name: 'FAQ', href: '/shipping-returns#faq' },
+                { name: 'Admin Login', href: '/admin/login' }
               ].map((item) => (
                 <li key={item.name}>
                   <Link href={item.href} className="text-muted-foreground hover:text-primary transition-colors text-xs uppercase tracking-wider block py-1 md:py-0">
