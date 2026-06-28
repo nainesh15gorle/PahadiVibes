@@ -82,8 +82,6 @@ export default function TrackOrderPage() {
   // Helper to get active step index based on order status
   const getActiveStepIndex = (status: string) => {
     const statusMap: Record<string, number> = {
-      "Pending Verification": 0,
-      "Payment Verified": 0,
       "Processing": 1,
       "Packed": 2,
       "Shipped": 3,
@@ -94,7 +92,7 @@ export default function TrackOrderPage() {
   };
 
   const activeIndex = order ? getActiveStepIndex(order.status) : 0;
-  const isCancelled = order?.status === "Cancelled" || order?.status === "Payment Rejected";
+  const isCancelled = order?.status === "Cancelled";
 
   return (
     <main className="flex-1 w-full bg-background pt-32 md:pt-40 pb-20 font-sans">

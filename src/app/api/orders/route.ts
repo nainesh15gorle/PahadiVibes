@@ -78,8 +78,6 @@ export async function POST(request: Request) {
       createdAt: new Date().toISOString(),
       paymentMethod: validatedData.paymentMethod,
       paymentStatus: validatedData.paymentStatus,
-      paymentScreenshot: validatedData.paymentScreenshot,
-      utrNumber: validatedData.utrNumber,
     };
 
     // Save Order

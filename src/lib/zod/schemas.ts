@@ -47,21 +47,16 @@ export const OrderSchema = z.object({
   pincode: z.string(),
   total: z.number().positive(),
   status: z.enum([
-    "Pending Verification",
-    "Payment Verified",
     "Processing",
     "Packed",
     "Shipped",
     "Out for Delivery",
     "Delivered",
-    "Cancelled",
-    "Payment Rejected"
+    "Cancelled"
   ]).default("Processing"),
   items: z.array(OrderItemSchema).min(1, "Order must contain at least one item"),
   paymentMethod: z.string().default("Razorpay"),
   paymentStatus: z.string().default("Paid"),
-  paymentScreenshot: z.string().optional().nullable(),
-  utrNumber: z.string().optional().nullable(),
   razorpayOrderId: z.string().optional().nullable(),
   razorpayPaymentId: z.string().optional().nullable(),
 });

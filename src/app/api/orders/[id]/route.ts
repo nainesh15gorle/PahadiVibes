@@ -40,14 +40,12 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
     const { status, paymentStatus } = body;
 
     const allowedStatuses = [
-      "Pending",
-      "Pending Verification",
-      "Payment Verified",
       "Processing",
+      "Packed",
       "Shipped",
+      "Out for Delivery",
       "Delivered",
-      "Cancelled",
-      "Payment Rejected"
+      "Cancelled"
     ];
 
     const updateFields: any = {};

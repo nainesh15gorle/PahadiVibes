@@ -231,6 +231,16 @@ export default function CartPage() {
     e.preventDefault();
     if (!validateAddressForm()) return;
 
+    if (!user) {
+      setGuestAddress({
+        ...addressForm,
+        fullName: addressForm.customerName,
+      });
+      setIsAddingAddress(false);
+      setStep("review");
+      return;
+    }
+
     setLoading(true);
     try {
       const url = editingAddress ? `/api/addresses/${editingAddress.id}` : "/api/addresses";
@@ -308,53 +318,6 @@ export default function CartPage() {
     } catch (err) {
       console.error(err);
     }
-  };
-
-  // Payment receipts uploading
-  const handleScreenshotChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    if (file.size > 5 * 1024 * 1024) {
-      setScreenshotUploadError("File size must be less than 5MB.");
-      return;
-    }
-
-    if (!file.type.startsWith("image/")) {
-      setScreenshotUploadError("Only image files are allowed.");
-      return;
-    }
-
-    setScreenshotUploadError(null);
-    setIsUploadingScreenshot(true);
-
-    const uploadFormData = new FormData();
-    uploadFormData.append("file", file);
-
-    try {
-      const res = await fetch("/api/upload-payment", {
-        method: "POST",
-        body: uploadFormData,
-      });
-
-      const data = await res.json();
-      if (data.success) {
-        setPaymentScreenshot(data.url);
-      } else {
-        setScreenshotUploadError(data.error || "Failed to upload screenshot.");
-      }
-    } catch (err) {
-      console.error("Upload error:", err);
-      setScreenshotUploadError("An error occurred during upload. Please try again.");
-    } finally {
-      setIsUploadingScreenshot(false);
-    }
-  };
-
-  const handleCopyUPI = () => {
-    navigator.clipboard.writeText("8476961030@ybl");
-    setCopiedUPI(true);
-    setTimeout(() => setCopiedUPI(false), 2000);
   };
 
   const handlePlaceOrder = async () => {
@@ -709,15 +672,11 @@ export default function CartPage() {
                   <div className="space-y-4">
                     <Button 
                       onClick={() => {
-                        if (!user) {
-                          window.location.href = "/sign-in?redirect_url=/cart";
-                        } else {
-                          setStep("shipping");
-                        }
+                        setStep("shipping");
                       }}
                       className="w-full h-12 bg-primary hover:bg-primary/95 text-primary-foreground font-semibold rounded-none uppercase tracking-widest text-xs shadow-lg shadow-primary/20 transition-all hover:translate-y-[-1px]"
                     >
-                      {!user ? "Sign In to Checkout" : "Proceed to Checkout"}
+                      Proceed to Checkout
                     </Button>
                     <Link href="/collection" className="block text-center text-xs text-muted-foreground hover:text-primary transition-colors py-1">
                       Continue Shopping
@@ -935,17 +894,19 @@ export default function CartPage() {
                       </div>
 
                       {/* Default checkbox */}
-                      <div className="flex items-center gap-2">
-                        <input
-                          type="checkbox"
-                          id="isDefault"
-                          name="isDefault"
-                          checked={addressForm.isDefault}
-                          onChange={handleAddressCheckboxChange}
-                          className="h-4.5 w-4.5 accent-primary border-border focus:ring-primary"
-                        />
-                        <label htmlFor="isDefault" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground cursor-pointer select-none">Set as default shipping address</label>
-                      </div>
+                      {user && (
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            id="isDefault"
+                            name="isDefault"
+                            checked={addressForm.isDefault}
+                            onChange={handleAddressCheckboxChange}
+                            className="h-4.5 w-4.5 accent-primary border-border focus:ring-primary"
+                          />
+                          <label htmlFor="isDefault" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground cursor-pointer select-none">Set as default shipping address</label>
+                        </div>
+                      )}
 
                       <div className="flex gap-4 border-t border-border/40 pt-6">
                         <Button 
@@ -976,7 +937,7 @@ export default function CartPage() {
                   ) : (
                     /* ADDRESS LIST */
                     <div className="space-y-6">
-                      {addresses.length === 0 ? (
+                      {((!user && !guestAddress) || (user && addresses.length === 0)) ? (
                         <div className="text-center py-12 border border-dashed border-border/80 p-8">
                           <MapPin className="w-10 h-10 text-muted-foreground/60 mx-auto mb-4" />
                           <h3 className="font-heading text-lg font-bold text-foreground mb-2">No Saved Addresses</h3>
@@ -985,8 +946,46 @@ export default function CartPage() {
                             onClick={openAddAddressForm}
                             className="bg-primary text-primary-foreground rounded-none px-6 h-11 text-xs font-bold tracking-widest uppercase"
                           >
-                            Add Your First Address
+                            Add Shipping Address
                           </Button>
+                        </div>
+                      ) : !user && guestAddress ? (
+                        <div className="grid grid-cols-1 gap-4">
+                          <div
+                            className="p-5 border border-primary bg-primary/[0.03] shadow-md relative transition-all duration-300 flex flex-col justify-between rounded-none text-left"
+                          >
+                            <div>
+                              <div className="flex items-start justify-between gap-2 mb-3">
+                                <div className="flex flex-col gap-1">
+                                  <h3 className="font-bold text-sm text-foreground leading-none">{guestAddress.customerName}</h3>
+                                  <span className="text-[10px] text-muted-foreground font-medium">{guestAddress.email}</span>
+                                </div>
+                                <span className="bg-emerald-600/10 text-emerald-600 border border-emerald-600/20 text-[8px] font-bold px-1.5 py-0.5 uppercase tracking-wider leading-none">
+                                  Selected (Guest)
+                                </span>
+                              </div>
+
+                              <div className="text-xs text-muted-foreground/90 space-y-0.5 leading-relaxed font-light mb-6">
+                                <p>{guestAddress.addressLine1}</p>
+                                {guestAddress.addressLine2 && <p>{guestAddress.addressLine2}</p>}
+                                {guestAddress.landmark && <p className="text-primary/70 font-normal">Landmark: {guestAddress.landmark}</p>}
+                                <p>{guestAddress.city}, {guestAddress.state} - <span className="font-semibold">{guestAddress.pincode}</span></p>
+                                <p className="flex items-center gap-1.5 mt-2 font-medium text-foreground/80"><Phone className="w-3 h-3 text-primary" /> {guestAddress.phone}</p>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center gap-3 border-t border-border/40 pt-3 mt-auto">
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  openEditAddressForm(guestAddress);
+                                }}
+                                className="text-[10px] text-muted-foreground hover:text-primary transition-colors font-bold uppercase tracking-wider flex items-center gap-1"
+                              >
+                                <Edit className="w-3 h-3" /> Edit Address
+                              </button>
+                            </div>
+                          </div>
                         </div>
                       ) : (
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1069,9 +1068,9 @@ export default function CartPage() {
                           <ArrowLeft className="w-4 h-4" /> Edit Cart
                         </button>
                         
-                        {addresses.length > 0 && (
+                        {((user && addresses.length > 0) || (!user && guestAddress)) && (
                           <Button 
-                            disabled={!selectedAddressId}
+                            disabled={user ? !selectedAddressId : !guestAddress}
                             onClick={() => setStep("review")}
                             className="h-12 px-10 bg-primary hover:bg-primary/95 text-primary-foreground font-semibold rounded-none uppercase tracking-widest text-xs shadow-lg shadow-primary/20 flex items-center gap-2"
                           >
@@ -1225,8 +1224,10 @@ export default function CartPage() {
                     <span className="text-primary font-heading">₹{cartTotal.toLocaleString()}</span>
                   </div>
                 </div>
-              </div>
-            </mot          {/* PREMIUM SUCCESS CONFIRMATION VIEW */}
+            </motion.div>
+          )}
+
+          {/* PREMIUM SUCCESS CONFIRMATION VIEW */}
           {step === "success" && createdOrder && (
             <motion.div 
               key="success"

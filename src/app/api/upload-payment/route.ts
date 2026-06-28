@@ -1,8 +1,4 @@
-import { NextResponse } from "next/server";
-
+// This endpoint is obsolete and has been deactivated.
 export async function POST() {
-  return NextResponse.json({ 
-    success: false, 
-    error: "This endpoint is obsolete. Manual payment upload is no longer supported." 
-  }, { status: 410 }); // 410 Gone
+  return new Response(JSON.stringify({ success: false, error: "Obsolete" }), { status: 410 });
 }

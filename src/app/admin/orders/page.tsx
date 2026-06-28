@@ -39,8 +39,6 @@ interface Order {
   items?: any[];
   paymentMethod?: string;
   paymentStatus?: string;
-  paymentScreenshot?: string | null;
-  utrNumber?: string | null;
   razorpayOrderId?: string | null;
   razorpayPaymentId?: string | null;
 }
@@ -148,50 +146,12 @@ export default function AdminOrdersPage() {
     }
   };
 
-  const handleVerifyPayment = async (approve: boolean) => {
-    if (!selectedOrder) return;
-    try {
-      setUpdatingStatus(true);
-      const payload = approve 
-        ? { status: "Processing", paymentStatus: "Verified" }
-        : { status: "Payment Rejected", paymentStatus: "Rejected" };
-        
-      const res = await fetch(`/api/orders/${selectedOrder.id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
-      });
-      const data = await res.json();
-      if (data.success) {
-        setOrders((prev) => 
-          prev.map((o) => o.id === selectedOrder.id ? { 
-            ...o, 
-            status: payload.status as any,
-            paymentStatus: payload.paymentStatus
-          } : o)
-        );
-        setSelectedOrder((prev) => prev ? { 
-          ...prev, 
-          status: payload.status as any,
-          paymentStatus: payload.paymentStatus
-        } : null);
-      } else {
-        alert(data.error || "Failed to update payment status");
-      }
-    } catch (err) {
-      console.error("Verify payment error:", err);
-    } finally {
-      setUpdatingStatus(false);
-    }
-  };
-
   // Metrics
-  const pendingVerificationCount = orders.filter((o) => o.status === "Pending Verification").length;
   const processingCount = orders.filter((o) => o.status === "Processing").length;
   const shippedCount = orders.filter((o) => o.status === "Shipped").length;
   const deliveredCount = orders.filter((o) => o.status === "Delivered").length;
   const totalSales = orders
-    .filter((o) => o.status !== "Cancelled" && o.status !== "Payment Rejected")
+    .filter((o) => o.status !== "Cancelled")
     .reduce((sum, o) => sum + Number(o.total), 0);
 
   // Filters logic
@@ -233,18 +193,10 @@ export default function AdminOrdersPage() {
       </div>
 
       {/* Metrics Row */}
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <div className="bg-[#1B1B1B] p-5 rounded-2xl border border-white/5">
           <h4 className="text-[10px] uppercase tracking-widest font-semibold text-[#F5F5F5]/40 mb-1.5 font-sans">Accumulated Sales</h4>
           <div className="text-2xl font-bold text-white">₹{totalSales.toLocaleString()}</div>
-        </div>
-
-        <div className="bg-[#1B1B1B] p-5 rounded-2xl border border-white/5 flex justify-between items-center">
-          <div>
-            <h4 className="text-[10px] uppercase tracking-widest font-semibold text-[#F5F5F5]/40 mb-1.5 font-sans">Pending Pay</h4>
-            <div className="text-2xl font-bold text-yellow-500">{pendingVerificationCount}</div>
-          </div>
-          <Clock className="w-8 h-8 text-yellow-500/20" />
         </div>
 
         <div className="bg-[#1B1B1B] p-5 rounded-2xl border border-white/5 flex justify-between items-center">
@@ -295,13 +247,12 @@ export default function AdminOrdersPage() {
             className="w-full pl-9 pr-8 py-3 bg-black/20 border border-white/5 hover:border-[#C8A951]/30 focus:border-[#C8A951] rounded-xl text-xs text-[#F5F5F5]/80 uppercase tracking-wider outline-none cursor-pointer appearance-none transition-all"
           >
             <option value="all" className="bg-[#1B1B1B]">All Statuses</option>
-            <option value="Pending Verification" className="bg-[#1B1B1B]">Pending Verification</option>
-            <option value="Payment Verified" className="bg-[#1B1B1B]">Payment Verified</option>
             <option value="Processing" className="bg-[#1B1B1B]">Processing</option>
+            <option value="Packed" className="bg-[#1B1B1B]">Packed</option>
             <option value="Shipped" className="bg-[#1B1B1B]">Shipped</option>
+            <option value="Out for Delivery" className="bg-[#1B1B1B]">Out for Delivery</option>
             <option value="Delivered" className="bg-[#1B1B1B]">Delivered</option>
             <option value="Cancelled" className="bg-[#1B1B1B]">Cancelled</option>
-            <option value="Payment Rejected" className="bg-[#1B1B1B]">Payment Rejected</option>
           </select>
         </div>
       </div>
@@ -336,15 +287,12 @@ export default function AdminOrdersPage() {
                     </td>
                      <td className="py-4.5 px-6 text-center">
                       <span className={`text-[10px] font-semibold uppercase tracking-wider px-2.5 py-1 rounded-full border ${
-                        order.status === 'Pending Verification' ? 'text-yellow-500 bg-yellow-500/5 border-yellow-500/10' :
-                        order.status === 'Payment Verified' ? 'text-teal-400 bg-teal-400/5 border-teal-400/10' :
                         order.status === 'Processing' ? 'text-amber-400 bg-amber-400/5 border-amber-400/10' :
                         order.status === 'Packed' ? 'text-orange-400 bg-orange-400/5 border-orange-400/10' :
                         order.status === 'Shipped' ? 'text-blue-400 bg-blue-400/5 border-blue-400/10' :
                         order.status === 'Out for Delivery' ? 'text-purple-400 bg-purple-400/5 border-purple-400/10' :
                         order.status === 'Delivered' ? 'text-emerald-400 bg-emerald-400/5 border-emerald-400/10' :
-                        order.status === 'Payment Rejected' ? 'text-rose-500 bg-rose-500/5 border-rose-500/10' :
-                        'text-red-400 bg-red-400/5 border-red-400/10'
+                        'text-rose-500 bg-rose-500/5 border-rose-500/10'
                       }`}>
                         {order.status}
                       </span>
@@ -424,15 +372,12 @@ export default function AdminOrdersPage() {
                       <span className="text-[10px] uppercase tracking-widest text-[#F5F5F5]/40 font-semibold">Logistics Status</span>
                       <div className="mt-1 flex items-center gap-2">
                         <span className={`text-xs font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full border ${
-                          selectedOrder.status === 'Pending Verification' ? 'text-yellow-500 bg-yellow-500/5 border-yellow-500/10' :
-                          selectedOrder.status === 'Payment Verified' ? 'text-teal-400 bg-teal-400/5 border-teal-400/10' :
                           selectedOrder.status === 'Processing' ? 'text-amber-400 bg-amber-400/5 border-amber-400/10' :
                           selectedOrder.status === 'Packed' ? 'text-orange-400 bg-orange-400/5 border-orange-400/10' :
                           selectedOrder.status === 'Shipped' ? 'text-blue-400 bg-blue-400/5 border-blue-400/10' :
                           selectedOrder.status === 'Out for Delivery' ? 'text-purple-400 bg-purple-400/5 border-purple-400/10' :
                           selectedOrder.status === 'Delivered' ? 'text-emerald-400 bg-emerald-400/5 border-emerald-400/10' :
-                          selectedOrder.status === 'Payment Rejected' ? 'text-rose-500 bg-rose-500/5 border-rose-500/10' :
-                          'text-red-400 bg-red-400/5 border-red-400/10'
+                          'text-rose-500 bg-rose-500/5 border-rose-500/10'
                         }`}>
                           {selectedOrder.status}
                         </span>

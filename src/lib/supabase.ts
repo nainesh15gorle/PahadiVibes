@@ -143,8 +143,6 @@ export interface DbOrder {
   created_at: string;
   payment_method?: string;
   payment_status?: string;
-  payment_screenshot?: string | null;
-  utr_number?: string | null;
   razorpay_order_id?: string | null;
   razorpay_payment_id?: string | null;
 }
@@ -182,8 +180,6 @@ export function mapDbOrderToOrder(dbOrder: DbOrder) {
     createdAt: dbOrder.created_at,
     paymentMethod: dbOrder.payment_method || metadataItem?.paymentMethod || "Razorpay",
     paymentStatus: dbOrder.payment_status || metadataItem?.paymentStatus || "Paid",
-    paymentScreenshot: dbOrder.payment_screenshot || metadataItem?.paymentScreenshot || null,
-    utrNumber: dbOrder.utr_number || metadataItem?.utrNumber || null,
     razorpayOrderId: dbOrder.razorpay_order_id || metadataItem?.razorpayOrderId || null,
     razorpayPaymentId: dbOrder.razorpay_payment_id || metadataItem?.razorpayPaymentId || null,
   };
@@ -207,8 +203,6 @@ export function mapOrderToDbOrder(order: any) {
     created_at: order.createdAt || new Date().toISOString(),
     payment_method: order.paymentMethod || "Razorpay",
     payment_status: order.paymentStatus || "Paid",
-    payment_screenshot: order.paymentScreenshot || null,
-    utr_number: order.utrNumber || null,
     razorpay_order_id: order.razorpayOrderId || null,
     razorpay_payment_id: order.razorpayPaymentId || null,
   };
@@ -231,8 +225,6 @@ export async function insertOrderSafe(dbOrder: any) {
   const isMissingColumnError = 
     errorMsg.includes("payment_method") || 
     errorMsg.includes("payment_status") || 
-    errorMsg.includes("payment_screenshot") || 
-    errorMsg.includes("utr_number") ||
     errorMsg.includes("razorpay_order_id") ||
     errorMsg.includes("razorpay_payment_id") ||
     error.code === "PGRST111" || // Column not found in PostgREST schema cache
@@ -246,8 +238,6 @@ export async function insertOrderSafe(dbOrder: any) {
       isMetadata: true,
       paymentMethod: dbOrder.payment_method || "Razorpay",
       paymentStatus: dbOrder.payment_status || "Paid",
-      paymentScreenshot: dbOrder.payment_screenshot || null,
-      utrNumber: dbOrder.utr_number || null,
       razorpayOrderId: dbOrder.razorpay_order_id || null,
       razorpayPaymentId: dbOrder.razorpay_payment_id || null,
     };
@@ -348,8 +338,6 @@ export async function updateOrderStatusSafe(id: string, updateFields: any) {
           isMetadata: true,
           paymentMethod: updateFields.payment_method || "Razorpay",
           paymentStatus: updateFields.payment_status || "Paid",
-          paymentScreenshot: null,
-          utrNumber: null,
           razorpayOrderId: updateFields.razorpay_order_id || null,
           razorpayPaymentId: updateFields.razorpay_payment_id || null,
         });

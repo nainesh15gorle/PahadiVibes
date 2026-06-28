@@ -158,12 +158,12 @@ export default function UserDashboardPage() {
       case "Delivered":
         return "text-emerald-500 bg-emerald-500/10 border-emerald-500/20";
       case "Shipped":
+      case "Out for Delivery":
         return "text-blue-500 bg-blue-500/10 border-blue-500/20";
       case "Processing":
-      case "Payment Verified":
+      case "Packed":
         return "text-amber-500 bg-amber-500/10 border-amber-500/20";
       case "Cancelled":
-      case "Payment Rejected":
         return "text-red-500 bg-red-500/10 border-red-500/20";
       default:
         return "text-neutral-500 bg-neutral-500/10 border-neutral-500/20";
@@ -172,9 +172,8 @@ export default function UserDashboardPage() {
 
   const getOrderStatusSteps = (status: string) => {
     const steps = [
-      { label: "Pending verification", active: true },
-      { label: "Processing", active: ["Payment Verified", "Processing", "Shipped", "Delivered"].includes(status) },
-      { label: "Shipped", active: ["Shipped", "Delivered"].includes(status) },
+      { label: "Processing", active: ["Processing", "Packed", "Shipped", "Out for Delivery", "Delivered"].includes(status) },
+      { label: "Shipped", active: ["Shipped", "Out for Delivery", "Delivered"].includes(status) },
       { label: "Delivered", active: status === "Delivered" },
     ];
     return steps;
