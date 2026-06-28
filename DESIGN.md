@@ -1,0 +1,1 @@
+Use a warm handcrafted aesthetic with soft beige, brown, and sand-gold color palette. Ensure UI elements feature glassmorphism (where applicable, like navbars), modern spacing, soft shadows, and clean layouts. All components should be polished, elegant, and visually impressive, reflecting a premium luxury brand. Dark mode should be supported beautifully.
