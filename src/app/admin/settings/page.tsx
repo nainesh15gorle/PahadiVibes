@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import Image from "next/image";
 import { useAuth } from "@/hooks/useAuth";
 import { motion } from "framer-motion";
 import { 
@@ -104,7 +105,7 @@ export default function AdminSettingsPage() {
                   <div className="flex items-center gap-4">
                     <div className="relative w-16 h-16 rounded-full overflow-hidden border-2 border-[#C8A951]/30">
                       {profile?.profile_image ? (
-                        <img src={profile.profile_image} alt="Profile" className="w-full h-full object-cover" />
+                        <Image src={profile.profile_image} alt="Profile" fill className="object-cover" />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center bg-[#C8A951]/20 text-[#C8A951]">
                           <UserIcon className="w-6 h-6" />

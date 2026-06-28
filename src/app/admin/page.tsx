@@ -147,7 +147,7 @@ export default function AdminDashboardOverview() {
   const metricCards = [
     { label: "Total Revenue", value: `₹${stats.totalRevenue.toLocaleString()}`, icon: DollarSign, trend: stats.revenueGrowth, desc: "Cumulative sales revenue" },
     { label: "Total Orders", value: stats.totalOrders.toString(), icon: ShoppingBag, trend: stats.ordersGrowth, desc: "Completed orders count" },
-    { label: "Registered Customers", value: stats.totalCustomers.toString(), icon: Users, trend: stats.customersGrowth, desc: "Supabase authenticated users" },
+    { label: "Total Customers", value: stats.totalCustomers.toString(), icon: Users, trend: stats.customersGrowth, desc: "Unique purchasing customers" },
     { label: "Products Catalog", value: stats.totalProducts.toString(), icon: Package, trend: stats.productsGrowth, desc: "Active items in store" },
   ];
 
