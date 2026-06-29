@@ -14,10 +14,12 @@ import { useCart } from "@/hooks/useCart";
 import { Button } from "@/components/ui/button";
 import { MandalaLoader } from "@/components/ui/mandala-loader";
 import { useToast } from "@/components/ui/Toast";
+import { useRouter } from "next/navigation";
 
 export default function CartPage() {
   const { cart, setCart, updateQuantity, removeFromCart, clearCart, cartTotal, totalItems, isLoaded } = useCart();
   const { toast } = useToast();
+  const router = useRouter();
   
   // Steps: "cart" | "shipping" | "review" | "success"
   const [step, setStep] = useState<"cart" | "shipping" | "review" | "success">("cart");
@@ -238,10 +240,9 @@ export default function CartPage() {
 
             const verifyData = await verifyRes.json();
             if (verifyData.success) {
-              setCreatedOrder(verifyData.data);
               clearCart();
               toast("Order placed successfully!", "success");
-              setStep("success");
+              router.push(`/checkout/success?order_id=${verifyData.data.id || verifyData.data.orderId}&phone=${guestAddress.phone}`);
             } else {
               setOrderError(verifyData.error || "Payment verification failed.");
               toast(verifyData.error || "Payment verification failed.", "error");

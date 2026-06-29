@@ -102,6 +102,23 @@ export default function AdminOrdersPage() {
 
   useEffect(() => {
     fetchOrders();
+
+    // Set up auto-refresh polling every 8 seconds in the background
+    const interval = setInterval(() => {
+      fetch("/api/orders")
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.success) {
+            const sorted = (data.data || []).sort(
+              (a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+            );
+            setOrders(sorted);
+          }
+        })
+        .catch((err) => console.error("Auto-refresh fetch orders error:", err));
+    }, 8000);
+
+    return () => clearInterval(interval);
   }, []);
 
   const handleViewOrder = async (order: Order) => {

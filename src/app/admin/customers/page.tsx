@@ -53,6 +53,20 @@ export default function AdminCustomersPage() {
 
   useEffect(() => {
     fetchCustomers();
+
+    // Set up auto-refresh polling every 8 seconds in the background
+    const interval = setInterval(() => {
+      fetch("/api/customers")
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.success) {
+            setCustomers(data.data || []);
+          }
+        })
+        .catch((err) => console.error("Auto-refresh fetch customers error:", err));
+    }, 8000);
+
+    return () => clearInterval(interval);
   }, []);
 
   // Filter logic

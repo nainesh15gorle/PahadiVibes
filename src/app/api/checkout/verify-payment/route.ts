@@ -25,7 +25,23 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, error: "Razorpay Key Secret is not configured on the server." }, { status: 500 });
     }
 
-    // 1. Verify payment signature securely
+    // 1. Prevent duplicate payment processing (Idempotency check)
+    const { data: existingOrder } = await supabaseAdmin
+      .from("orders")
+      .select("id, order_id")
+      .eq("razorpay_payment_id", razorpay_payment_id)
+      .maybeSingle();
+
+    if (existingOrder) {
+      console.log(`Payment already processed for transaction: ${razorpay_payment_id}. Returning existing order.`);
+      return NextResponse.json({
+        success: true,
+        message: "Payment already verified and order exists.",
+        data: { id: existingOrder.id, orderId: existingOrder.order_id }
+      }, { status: 200 });
+    }
+
+    // 2. Verify payment signature securely
     const text = `${razorpay_order_id}|${razorpay_payment_id}`;
     const generatedSignature = crypto
       .createHmac("sha256", keySecret)
