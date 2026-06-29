@@ -21,7 +21,8 @@ export async function GET() {
     return NextResponse.json({ success: true, data: mappedCategories });
   } catch (error) {
     console.error("GET /api/categories error:", error);
-    return NextResponse.json({ success: false, error: "Failed to fetch categories" }, { status: 500 });
+    const errorMessage = error && typeof error === "object" && "message" in error ? (error as any).message : String(error);
+    return NextResponse.json({ success: false, error: errorMessage }, { status: 500 });
   }
 }
 
@@ -56,6 +57,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, error: error.issues }, { status: 400 });
     }
     console.error("POST /api/categories error:", error);
-    return NextResponse.json({ success: false, error: error instanceof Error ? error.message : "Internal Server Error" }, { status: 500 });
+    const errorMessage = error && typeof error === "object" && "message" in error ? (error as any).message : String(error);
+    return NextResponse.json({ success: false, error: errorMessage }, { status: 500 });
   }
 }

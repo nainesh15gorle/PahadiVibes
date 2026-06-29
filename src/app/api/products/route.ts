@@ -43,7 +43,8 @@ export async function GET(request: Request) {
     return NextResponse.json({ success: true, data: mappedProducts });
   } catch (error) {
     console.error("GET /api/products error:", error);
-    return NextResponse.json({ success: false, error: "Failed to fetch products" }, { status: 500 });
+    const errorMessage = error && typeof error === "object" && "message" in error ? (error as any).message : String(error);
+    return NextResponse.json({ success: false, error: errorMessage }, { status: 500 });
   }
 }
 
@@ -79,6 +80,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, error: error.issues }, { status: 400 });
     }
     console.error("POST /api/products error:", error);
-    return NextResponse.json({ success: false, error: "Internal Server Error" }, { status: 500 });
+    const errorMessage = error && typeof error === "object" && "message" in error ? (error as any).message : String(error);
+    return NextResponse.json({ success: false, error: errorMessage }, { status: 500 });
   }
 }

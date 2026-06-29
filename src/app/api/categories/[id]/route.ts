@@ -32,7 +32,8 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
       return NextResponse.json({ success: false, error: error.issues }, { status: 400 });
     }
     console.error(`PUT /api/categories/${id} error:`, error);
-    return NextResponse.json({ success: false, error: "Internal Server Error" }, { status: 500 });
+    const errorMessage = error && typeof error === "object" && "message" in error ? (error as any).message : String(error);
+    return NextResponse.json({ success: false, error: errorMessage }, { status: 500 });
   }
 }
 
@@ -56,6 +57,7 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
     return NextResponse.json({ success: true, message: "Category deleted" });
   } catch (error) {
     console.error(`DELETE /api/categories/${id} error:`, error);
-    return NextResponse.json({ success: false, error: "Failed to delete category" }, { status: 500 });
+    const errorMessage = error && typeof error === "object" && "message" in error ? (error as any).message : String(error);
+    return NextResponse.json({ success: false, error: errorMessage }, { status: 500 });
   }
 }

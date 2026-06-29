@@ -21,7 +21,8 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     return NextResponse.json({ success: true, data: mappedProduct });
   } catch (error) {
     console.error(`GET /api/products/${id} error:`, error);
-    return NextResponse.json({ success: false, error: "Failed to fetch product" }, { status: 500 });
+    const errorMessage = error && typeof error === "object" && "message" in error ? (error as any).message : String(error);
+    return NextResponse.json({ success: false, error: errorMessage }, { status: 500 });
   }
 }
 
@@ -53,7 +54,8 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
       return NextResponse.json({ success: false, error: error.issues }, { status: 400 });
     }
     console.error(`PUT /api/products/${id} error:`, error);
-    return NextResponse.json({ success: false, error: "Internal Server Error" }, { status: 500 });
+    const errorMessage = error && typeof error === "object" && "message" in error ? (error as any).message : String(error);
+    return NextResponse.json({ success: false, error: errorMessage }, { status: 500 });
   }
 }
 
@@ -77,6 +79,7 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
     return NextResponse.json({ success: true, message: "Product deleted" });
   } catch (error) {
     console.error(`DELETE /api/products/${id} error:`, error);
-    return NextResponse.json({ success: false, error: "Failed to delete product" }, { status: 500 });
+    const errorMessage = error && typeof error === "object" && "message" in error ? (error as any).message : String(error);
+    return NextResponse.json({ success: false, error: errorMessage }, { status: 500 });
   }
 }

@@ -100,3 +100,92 @@ DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+
+-- 4. Create the categories table
+CREATE TABLE IF NOT EXISTS public.categories (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name VARCHAR(255) NOT NULL,
+    slug VARCHAR(255) NOT NULL UNIQUE,
+    image TEXT NOT NULL,
+    description TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- 5. Create the products table
+CREATE TABLE IF NOT EXISTS public.products (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name VARCHAR(255) NOT NULL,
+    slug VARCHAR(255) NOT NULL UNIQUE,
+    category VARCHAR(255) NOT NULL,
+    price NUMERIC NOT NULL,
+    original_price NUMERIC,
+    stock INTEGER NOT NULL DEFAULT 0,
+    description TEXT NOT NULL,
+    story TEXT,
+    materials TEXT,
+    dimensions TEXT,
+    featured BOOLEAN NOT NULL DEFAULT false,
+    bestseller BOOLEAN NOT NULL DEFAULT false,
+    status VARCHAR(50) NOT NULL DEFAULT 'Active',
+    images JSONB NOT NULL DEFAULT '[]'::jsonb,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- 6. Create the orders table
+CREATE TABLE IF NOT EXISTS public.orders (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    order_id VARCHAR(255) NOT NULL UNIQUE,
+    user_id UUID REFERENCES public.users(id) ON DELETE SET NULL,
+    customer_name VARCHAR(255) NOT NULL,
+    email VARCHAR(255) NOT NULL,
+    phone VARCHAR(50) NOT NULL,
+    address TEXT NOT NULL,
+    city VARCHAR(255) NOT NULL,
+    state VARCHAR(255) NOT NULL,
+    pincode VARCHAR(20) NOT NULL,
+    total NUMERIC NOT NULL,
+    status VARCHAR(50) NOT NULL DEFAULT 'Processing',
+    items JSONB NOT NULL DEFAULT '[]'::jsonb,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    payment_method VARCHAR(100),
+    payment_status VARCHAR(100),
+    razorpay_order_id VARCHAR(255),
+    razorpay_payment_id VARCHAR(255)
+);
+
+-- Enable RLS on new tables
+ALTER TABLE public.categories ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.products ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.orders ENABLE ROW LEVEL SECURITY;
+
+-- Policies for categories
+DROP POLICY IF EXISTS "Allow public read access to categories" ON public.categories;
+CREATE POLICY "Allow public read access to categories" ON public.categories
+    FOR SELECT TO public USING (true);
+
+DROP POLICY IF EXISTS "Allow admin manage access to categories" ON public.categories;
+CREATE POLICY "Allow admin manage access to categories" ON public.categories
+    FOR ALL TO authenticated USING (true) WITH CHECK (true);
+
+-- Policies for products
+DROP POLICY IF EXISTS "Allow public read access to products" ON public.products;
+CREATE POLICY "Allow public read access to products" ON public.products
+    FOR SELECT TO public USING (true);
+
+DROP POLICY IF EXISTS "Allow admin manage access to products" ON public.products;
+CREATE POLICY "Allow admin manage access to products" ON public.products
+    FOR ALL TO authenticated USING (true) WITH CHECK (true);
+
+-- Policies for orders
+DROP POLICY IF EXISTS "Allow public insert access to orders" ON public.orders;
+CREATE POLICY "Allow public insert access to orders" ON public.orders
+    FOR INSERT TO public WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Users can view their own orders" ON public.orders;
+CREATE POLICY "Users can view their own orders" ON public.orders
+    FOR SELECT TO authenticated USING (auth.jwt() ->> 'sub' = user_id::text);
+
+DROP POLICY IF EXISTS "Allow admin manage access to orders" ON public.orders;
+CREATE POLICY "Allow admin manage access to orders" ON public.orders
+    FOR ALL TO authenticated USING (true) WITH CHECK (true);

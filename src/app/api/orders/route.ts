@@ -26,7 +26,8 @@ export async function GET(request: Request) {
     return NextResponse.json({ success: true, data: mappedOrders });
   } catch (error) {
     console.error("GET /api/orders error:", error);
-    return NextResponse.json({ success: false, error: "Failed to fetch orders" }, { status: 500 });
+    const errorMessage = error && typeof error === "object" && "message" in error ? (error as any).message : String(error);
+    return NextResponse.json({ success: false, error: errorMessage }, { status: 500 });
   }
 }
 
