@@ -1,383 +1,114 @@
-# 🏔️ PahadiVibes
+# 🌄 Pahadi Vibes
 
-<div align="center">
-
-### Crafted by Hands. Inspired by Heritage.
-
-A premium full-stack artisan e-commerce platform built to showcase handcrafted Indian Mandala Art and heritage-inspired decor through a modern luxury shopping experience.
-
----
-
-🌐 **Live Demo:** https://pahadivibes.vercel.app
-
-</div>
-
----
-
-## 📖 Overview
-
-PahadiVibes is a mobile-first luxury e-commerce platform designed to connect traditional Indian craftsmanship with modern digital commerce.
-
-The platform provides a complete shopping ecosystem including:
-
-* Product Discovery
-* User Authentication
-* Cart Management
-* Secure Checkout
-* Order Processing
-* Inventory Management
-* Analytics Dashboard
-* Admin Portal
-
-The project focuses heavily on premium UI/UX, responsiveness, scalability, and real-world e-commerce workflows.
+A premium full-stack e-commerce platform built to showcase and sell authentic handcrafted Himalayan art, blending traditional craftsmanship with a modern luxury shopping experience. The platform features a high-performance storefront, secure online payments, and a comprehensive admin dashboard for managing products, orders, customers, and inventory.
 
 ---
 
 # ✨ Features
 
-## Customer Features
+### Customer Experience
 
-### Authentication
+* Premium luxury-inspired UI/UX
+* Browse Mandala Wall Art & Aipan Art collections
+* Advanced product search
+* Detailed product pages
+* Guest Checkout
+* Secure Razorpay payment integration
+* Order confirmation & tracking
+* Fully responsive across desktop, tablet, and mobile
 
-* Secure User Registration
-* Login & Logout
-* Google Authentication
-* Protected Routes
-* Session Management
+### Admin Dashboard
 
-### Shopping Experience
-
-* Browse Artisan Collections
-* Product Search
-* Category Filtering
-* Product Details Page
-* Related Products
-* Wishlist Management
-* Add To Cart
-* Quantity Management
-
-### Checkout
-
-* Mobile Optimized Checkout
-* Order Summary
-* Payment Integration
-* Order Confirmation
-
-### User Account
-
-* View Orders
-* Manage Profile
-* Track Purchases
-
----
-
-## Admin Features
-
-### Product Management
-
-* Add Products
-* Edit Products
-* Delete Products
-* Upload Product Images
-* Manage Categories
-* Manage Pricing
-
-### Inventory Management
-
-* Track Stock Levels
-* Update Inventory
-* Mark Products In Stock / Out Of Stock
-
-### Order Management
-
-* View Orders
-* Update Order Status
-* Process Orders
-* Manage Deliveries
-
-### Analytics Dashboard
-
-* Revenue Overview
-* Total Orders
-* Total Customers
-* Product Performance
-* Inventory Insights
-
----
-
-# 🏗 Architecture
-
-```text
-Customer Website
-        │
-        ▼
-Next.js Frontend
-        │
-        ▼
-Supabase Authentication
-        │
-        ▼
-Supabase PostgreSQL Database
-        │
-        ▼
-Cloudinary Media Storage
-        │
-        ▼
-Admin Dashboard
-```
+* Secure admin authentication
+* Dashboard analytics
+* Product management
+* Inventory management
+* Order management
+* Customer management
+* Category management
+* Discount management
+* Website settings management
 
 ---
 
 # 🛠 Tech Stack
 
-## Frontend
+### Frontend
 
-* Next.js 15
+* Next.js
 * React
 * TypeScript
 * Tailwind CSS
 * Framer Motion
-* Lucide Icons
 
-## Backend
+### Backend
 
 * Next.js API Routes
-* Server Actions
+* Supabase
+* PostgreSQL
 
-## Database
+### Authentication
 
-* Supabase PostgreSQL
+* Supabase Authentication
 
-## Authentication
+### Payment Gateway
 
-* Supabase Auth
-* Google OAuth
+* Razorpay
 
-## Media Storage
-
-* Cloudinary
-
-## Deployment
+### Deployment
 
 * Vercel
 
 ---
 
-# 📱 Mobile-First Design
+# 💳 Payment Workflow
 
-The platform is designed primarily for mobile users.
-
-### Responsive Support
-
-* Mobile Phones
-* Tablets
-* Laptops
-* Large Screens
-
-### Mobile Optimizations
-
-* Touch Friendly Navigation
-* Responsive Product Cards
-* Mobile Search Experience
-* Optimized Checkout Flow
-* Adaptive Typography
-* Mobile Drawer Navigation
+* Customer adds products to the cart.
+* Completes checkout using Razorpay.
+* Payment is securely verified on the backend.
+* Order is automatically stored in the database.
+* Inventory is updated.
+* Admin Dashboard reflects the latest order instantly.
+* Customer receives a successful order confirmation.
 
 ---
 
-# 📂 Project Structure
+# 🚀 Highlights
 
-```bash
-PahadiVibes
-│
-├── app/
-│   ├── admin/
-│   ├── products/
-│   ├── checkout/
-│   ├── cart/
-│   └── auth/
-│
-├── components/
-│
-├── lib/
-│   ├── supabase/
-│   ├── cloudinary/
-│   └── utils/
-│
-├── hooks/
-│
-├── public/
-│
-├── styles/
-│
-├── types/
-│
-└── README.md
-```
+* Luxury e-commerce experience
+* Secure Razorpay payment verification
+* Responsive design
+* Modern animations
+* Real-time order management
+* Inventory tracking
+* Customer management
+* Optimized performance
+* Production-ready architecture
 
 ---
 
-# 🚀 Getting Started
+# 🔮 Future Enhancements
 
-## Clone Repository
-
-```bash
-git clone https://github.com/nainesh15gorle/E-commerce-handicraft-website.git
-```
-
-## Navigate Into Project
-
-```bash
-cd E-commerce-handicraft-website
-```
-
-## Install Dependencies
-
-```bash
-npm install
-```
-
-## Environment Variables
-
-Create:
-
-```env
-.env.local
-```
-
-Add:
-
-```env
-NEXT_PUBLIC_SUPABASE_URL=
-
-NEXT_PUBLIC_SUPABASE_ANON_KEY=
-
-SUPABASE_SERVICE_ROLE_KEY=
-
-CLOUDINARY_CLOUD_NAME=
-
-CLOUDINARY_API_KEY=
-
-CLOUDINARY_API_SECRET=
-
-NEXT_PUBLIC_SITE_URL=
-```
-
-## Run Development Server
-
-```bash
-npm run dev
-```
-
-Open:
-
-```bash
-http://localhost:3000
-```
-
----
-
-# 🗄 Database Design
-
-### Products
-
-* Product Information
-* Categories
-* Pricing
-* Images
-* Inventory
-
-### Orders
-
-* Customer Information
-* Purchased Products
-* Payment Details
-* Order Status
-
-### Users
-
-* Authentication
-* Profiles
-* Purchase History
-
----
-
-# ⚡ Performance
-
-### Optimizations
-
-* Image Optimization
-* Lazy Loading
-* Code Splitting
-* Server Components
-* Dynamic Imports
-
-### Goals
-
-* Lighthouse Score 90+
-* Fast Initial Load
-* SEO Optimized
-* Mobile Performance Optimized
-
----
-
-# 🔒 Security
-
-* Protected Admin Routes
-* Secure Authentication
-* Environment Variable Protection
-* Server-Side Validation
-* Secure API Communication
-
----
-
-# 🎯 Key Learnings
-
-This project demonstrates:
-
-* Full Stack Development
-* Authentication Systems
-* Database Design
-* Cloud Storage Integration
-* Responsive UI Engineering
-* E-Commerce Architecture
-* State Management
-* Production Deployment
-
----
-
-# 📈 Future Improvements
-
-* Product Reviews
-* AI Recommendations
-* Multi-language Support
-* Advanced Analytics
+* Wishlist
+* Reviews & Ratings
+* Coupon System
 * Email Notifications
-* Progressive Web App (PWA)
-* Order Tracking
+* Invoice Generation
+* Shipment Tracking
+* AI-powered Product Recommendations
+* Multi-language Support
 
 ---
 
 # 👨‍💻 Developer
 
-### Nainesh Babu
+**Nainesh Gorle**
 
-Full Stack Developer passionate about building scalable, user-centric web applications with modern technologies.
-
-**Tech Interests**
-
-* Full Stack Development
-* System Design
-* Cloud Technologies
-* UI/UX Engineering
-* Product Development
+* GitHub: https://github.com/nainesh15gorle
+* LinkedIn: https://www.linkedin.com/in/naineshgorle
 
 ---
 
-<div align="center">
+## 📄 License
 
-### ❤️ Preserving Indian Heritage Through Technology
-
-Built with Next.js, Supabase, Cloudinary, and a passion for handcrafted artistry.
-
-</div>
+This project was developed as a full-stack client project to deliver a premium online shopping experience for handcrafted Himalayan artwork. All branding, artwork, and product assets belong to their respective owners.
