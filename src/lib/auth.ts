@@ -1,8 +1,14 @@
 import { cookies } from "next/headers";
 import { createClient } from "@supabase/supabase-js";
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://placeholder.supabase.co";
+let supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "placeholder-anon-key";
+
+// Ensure URL is a valid HTTP/HTTPS URL to avoid crashing the build if it's missing or invalid
+const isValidUrl = supabaseUrl.startsWith("http://") || supabaseUrl.startsWith("https://");
+if (!isValidUrl) {
+  supabaseUrl = "https://placeholder.supabase.co";
+}
 
 /**
  * Gets the current authenticated Supabase user on the server side using the access token cookie.

@@ -38,9 +38,13 @@ export async function middleware(req: NextRequest) {
     }
     
     // Call Supabase to check user and check if they are admin
+    const rawUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
+    const validatedUrl = (rawUrl.startsWith("http://") || rawUrl.startsWith("https://")) 
+      ? rawUrl 
+      : "https://placeholder.supabase.co";
     const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      validatedUrl,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "placeholder-anon-key",
       { auth: { persistSession: false } }
     );
     const { data: { user }, error } = await supabase.auth.getUser(token);
@@ -61,9 +65,13 @@ export async function middleware(req: NextRequest) {
       return new NextResponse("Unauthorized", { status: 401 });
     }
 
+    const rawUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
+    const validatedUrl = (rawUrl.startsWith("http://") || rawUrl.startsWith("https://")) 
+      ? rawUrl 
+      : "https://placeholder.supabase.co";
     const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      validatedUrl,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "placeholder-anon-key",
       { auth: { persistSession: false } }
     );
     const { data: { user }, error } = await supabase.auth.getUser(token);

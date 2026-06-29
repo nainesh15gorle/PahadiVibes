@@ -4,8 +4,14 @@ import React, { createContext, useContext, useEffect, useState } from "react";
 import { createClient, User } from "@supabase/supabase-js";
 
 // Initialize the client-side Supabase client
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://placeholder.supabase.co";
+let supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "placeholder-anon-key";
+
+// Ensure URL is a valid HTTP/HTTPS URL to avoid crashing the build if it's missing or invalid
+const isValidUrl = supabaseUrl.startsWith("http://") || supabaseUrl.startsWith("https://");
+if (!isValidUrl) {
+  supabaseUrl = "https://placeholder.supabase.co";
+}
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {

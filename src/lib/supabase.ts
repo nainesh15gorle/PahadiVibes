@@ -1,12 +1,15 @@
 import { createClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://placeholder.supabase.co";
+let supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "placeholder-anon-key";
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || "placeholder-service-key";
 
-if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
-  console.warn("Supabase URL or Anon Key is missing. Using placeholders for build time.");
+// Ensure URL is a valid HTTP/HTTPS URL to avoid crashing the build if it's missing or invalid
+const isValidUrl = supabaseUrl.startsWith("http://") || supabaseUrl.startsWith("https://");
+if (!isValidUrl) {
+  console.warn(`Supabase URL is missing or invalid ("${supabaseUrl}"). Using placeholder for build.`);
+  supabaseUrl = "https://placeholder.supabase.co";
 }
 
 // 1. Admin/Service Role client for server-side admin writes (bypasses RLS)
