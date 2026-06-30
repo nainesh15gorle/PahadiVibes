@@ -1,14 +1,19 @@
 import { NextResponse } from "next/server";
-import { supabaseAdmin } from "@/lib/supabase";
+import { supabaseAdmin, mapOrderToDbOrder, insertOrderSafe } from "@/lib/supabase";
+import crypto from "crypto";
 
 export const dynamic = 'force-dynamic';
 
 export async function POST(request: Request) {
   try {
-    const { items } = await request.json();
+    const { items, customerDetails, userId, total } = await request.json();
 
     if (!items || !Array.isArray(items) || items.length === 0) {
       return NextResponse.json({ success: false, error: "Cart is empty" }, { status: 400 });
+    }
+
+    if (!customerDetails) {
+      return NextResponse.json({ success: false, error: "Missing customer details" }, { status: 400 });
     }
 
     const keyId = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
@@ -22,6 +27,7 @@ export async function POST(request: Request) {
     }
 
     let calculatedTotal = 0;
+    const validatedItems = [];
 
     // Verify stock and fetch fresh prices
     for (const item of items) {
@@ -52,7 +58,16 @@ export async function POST(request: Request) {
         }, { status: 400 });
       }
 
-      calculatedTotal += Number(product.price) * item.quantity;
+      const price = Number(product.price);
+      calculatedTotal += price * item.quantity;
+      
+      validatedItems.push({
+        productId: item.productId,
+        productName: product.name,
+        quantity: Number(item.quantity),
+        price: price,
+        subtotal: price * Number(item.quantity)
+      });
     }
 
     if (calculatedTotal <= 0) {
@@ -73,7 +88,10 @@ export async function POST(request: Request) {
       body: JSON.stringify({
         amount: amountInPaise,
         currency: "INR",
-        receipt: `rcpt_${crypto.randomUUID().substring(0, 8)}`
+        receipt: `rcpt_${internalOrderId.substring(0, 8)}`,
+        notes: {
+          internalOrderId: internalOrderId
+        }
       })
     });
 
@@ -88,10 +106,53 @@ export async function POST(request: Request) {
 
     const orderData = await rzpResponse.json();
 
+    // Now insert the Pending order into Supabase
+    const addressString = [
+      customerDetails.addressLine1,
+      customerDetails.addressLine2,
+      customerDetails.landmark ? `Landmark: ${customerDetails.landmark}` : null,
+      customerDetails.country || "India"
+    ].filter(Boolean).join(", ");
+
+    const internalOrderId = crypto.randomUUID();
+
+    const newOrder = {
+      id: internalOrderId,
+      orderId: internalOrderId,
+      userId: userId === "anonymous" || !userId ? null : userId,
+      customerName: customerDetails.customerName || customerDetails.fullName,
+      email: customerDetails.email,
+      phone: customerDetails.phone,
+      address: addressString,
+      city: customerDetails.city,
+      state: customerDetails.state,
+      pincode: customerDetails.pincode,
+      total: calculatedTotal,
+      status: "Pending", // Important: Set as Pending until paid
+      paymentMethod: "Razorpay",
+      paymentStatus: "Pending",
+      razorpayOrderId: orderData.id,
+      razorpayPaymentId: null,
+      items: validatedItems,
+      createdAt: new Date().toISOString()
+    };
+
+    const dbOrder = mapOrderToDbOrder(newOrder);
+    const { error: orderError } = await insertOrderSafe(dbOrder);
+
+    if (orderError) {
+      console.error("Supabase order insert error (Pending):", orderError);
+      return NextResponse.json({ 
+        success: false, 
+        error: "Failed to create order record." 
+      }, { status: 500 });
+    }
+
     return NextResponse.json({
       success: true,
       keyId: keyId,
-      orderId: orderData.id,
+      orderId: orderData.id, // Razorpay Order ID
+      internalOrderId: internalOrderId,
       amount: orderData.amount,
       currency: orderData.currency
     });

@@ -1,22 +1,19 @@
 import { NextResponse } from "next/server";
 import crypto from "crypto";
-import { supabaseAdmin, mapOrderToDbOrder, insertOrderSafe } from "@/lib/supabase";
+import { supabaseAdmin, updateOrderStatusSafe, mapDbOrderToOrder } from "@/lib/supabase";
 
 export const dynamic = 'force-dynamic';
 
 export async function POST(request: Request) {
   try {
     const {
+      internalOrderId,
       razorpay_payment_id,
       razorpay_order_id,
-      razorpay_signature,
-      customerDetails,
-      items,
-      total,
-      userId
+      razorpay_signature
     } = await request.json();
 
-    if (!razorpay_payment_id || !razorpay_order_id || !razorpay_signature || !customerDetails || !items || !total) {
+    if (!internalOrderId || !razorpay_payment_id || !razorpay_order_id || !razorpay_signature) {
       return NextResponse.json({ success: false, error: "Missing required payment details" }, { status: 400 });
     }
 
@@ -25,19 +22,26 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, error: "Razorpay Key Secret is not configured on the server." }, { status: 500 });
     }
 
-    // 1. Prevent duplicate payment processing (Idempotency check)
-    const { data: existingOrder } = await supabaseAdmin
+    // 1. Fetch existing Pending order
+    const { data: dbOrder, error: fetchError } = await supabaseAdmin
       .from("orders")
-      .select("id, order_id")
-      .eq("razorpay_payment_id", razorpay_payment_id)
+      .select("*")
+      .eq("id", internalOrderId)
       .maybeSingle();
 
-    if (existingOrder) {
-      console.log(`Payment already processed for transaction: ${razorpay_payment_id}. Returning existing order.`);
+    if (fetchError || !dbOrder) {
+      console.error("verify-payment: Order not found:", internalOrderId);
+      return NextResponse.json({ success: false, error: "Order not found" }, { status: 404 });
+    }
+
+    const order = mapDbOrderToOrder(dbOrder);
+
+    if (order.paymentStatus === "Paid") {
+      console.log(`Payment already verified for order: ${internalOrderId}.`);
       return NextResponse.json({
         success: true,
-        message: "Payment already verified and order exists.",
-        data: { id: existingOrder.id, orderId: existingOrder.order_id }
+        message: "Payment already verified.",
+        data: { id: order.id, orderId: order.orderId }
       }, { status: 200 });
     }
 
@@ -56,101 +60,49 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, error: "Payment verification failed. Invalid signature." }, { status: 400 });
     }
 
-    // 2. Final stock verification
-    for (const item of items) {
-      const { data: product, error } = await supabaseAdmin
-        .from("products")
-        .select("stock, name")
-        .eq("id", item.productId)
-        .maybeSingle();
-
-      if (error || !product) {
-        return NextResponse.json({ 
-          success: false, 
-          error: `Product not found during checkout verification: ${item.productName || 'Unknown Product'}` 
-        }, { status: 400 });
-      }
-
-      if (Number(product.stock) < item.quantity) {
-        return NextResponse.json({ 
-          success: false, 
-          error: `Insufficient stock for product: ${product.name} during final processing.` 
-        }, { status: 400 });
-      }
-    }
-
-    // 3. Format address string
-    const addressString = [
-      customerDetails.addressLine1,
-      customerDetails.addressLine2,
-      customerDetails.landmark ? `Landmark: ${customerDetails.landmark}` : null,
-      customerDetails.country || "India"
-    ].filter(Boolean).join(", ");
-
-    const orderId = crypto.randomUUID();
-
-    // Build the Order payload matching schemas and mapOrderToDbOrder helper
-    const newOrder = {
-      id: orderId,
-      orderId: orderId,
-      userId: userId === "anonymous" || !userId ? null : userId,
-      customerName: customerDetails.customerName || customerDetails.fullName,
-      email: customerDetails.email,
-      phone: customerDetails.phone,
-      address: addressString,
-      city: customerDetails.city,
-      state: customerDetails.state,
-      pincode: customerDetails.pincode,
-      total: Number(total),
-      status: "Processing" as const,
-      paymentMethod: "Razorpay",
-      paymentStatus: "Paid",
-      razorpayOrderId: razorpay_order_id,
-      razorpayPaymentId: razorpay_payment_id,
-      items: items.map((item: any) => ({
-        productId: item.productId,
-        productName: item.productName || item.name,
-        quantity: Number(item.quantity),
-        price: Number(item.price),
-        subtotal: Number(item.price) * Number(item.quantity)
-      }))
+    // 3. Update Order Status
+    const updateFields = {
+      status: "Processing",
+      payment_status: "Paid",
+      razorpay_payment_id: razorpay_payment_id
     };
 
-    // Save order in Supabase
-    const dbOrder = mapOrderToDbOrder(newOrder);
-    const { data: savedOrder, error: orderError } = await insertOrderSafe(dbOrder);
+    const { error: updateError } = await updateOrderStatusSafe(internalOrderId, updateFields);
 
-    if (orderError) {
-      console.error("Supabase order insert error:", orderError);
-      throw orderError;
+    if (updateError) {
+      console.error("Supabase order update error:", updateError);
+      throw updateError;
     }
 
     // 4. Reduce stock in database
-    for (const item of items) {
-      const { data: product } = await supabaseAdmin
-        .from("products")
-        .select("stock")
-        .eq("id", item.productId)
-        .maybeSingle();
-
-      if (product) {
-        const updatedStock = Math.max(0, Number(product.stock) - item.quantity);
-        await supabaseAdmin
+    if (order.items && Array.isArray(order.items)) {
+      for (const item of order.items) {
+        if (!item.productId) continue;
+        const { data: product } = await supabaseAdmin
           .from("products")
-          .update({ stock: updatedStock })
-          .eq("id", item.productId);
+          .select("stock")
+          .eq("id", item.productId)
+          .maybeSingle();
+
+        if (product) {
+          const updatedStock = Math.max(0, Number(product.stock) - item.quantity);
+          await supabaseAdmin
+            .from("products")
+            .update({ stock: updatedStock })
+            .eq("id", item.productId);
+        }
       }
     }
 
-    // 5. Sync user/customer profile if logged in
-    if (userId && userId !== "anonymous") {
+    // 5. Sync user/customer profile if logged in (Optional, already handled on frontend or prior steps)
+    if (order.userId && order.userId !== "anonymous") {
       const { error: customerError } = await supabaseAdmin
         .from("users")
         .upsert({
-          id: userId,
-          full_name: customerDetails.customerName || customerDetails.fullName,
-          email: customerDetails.email,
-          phone: customerDetails.phone,
+          id: order.userId,
+          full_name: order.customerName,
+          email: order.email,
+          phone: order.phone,
           updated_at: new Date().toISOString()
         }, { onConflict: "id" });
 
@@ -161,9 +113,9 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       success: true,
-      message: "Payment verified and order created successfully.",
-      data: newOrder
-    }, { status: 201 });
+      message: "Payment verified successfully.",
+      data: { id: order.id, orderId: order.orderId }
+    }, { status: 200 });
 
   } catch (error: any) {
     console.error("POST /api/checkout/verify-payment error:", error);

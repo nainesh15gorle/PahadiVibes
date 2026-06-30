@@ -189,7 +189,23 @@ export default function CartPage() {
       const orderRes = await fetch("/api/checkout/create-razorpay-order", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ items: itemsPayload })
+        body: JSON.stringify({ 
+          items: itemsPayload,
+          total: cartTotal,
+          userId: user?.id || "anonymous",
+          customerDetails: {
+            fullName: guestAddress.fullName || guestAddress.customerName,
+            email: guestAddress.email,
+            phone: guestAddress.phone,
+            addressLine1: guestAddress.addressLine1,
+            addressLine2: guestAddress.addressLine2 || "",
+            city: guestAddress.city,
+            state: guestAddress.state,
+            pincode: guestAddress.pincode,
+            landmark: guestAddress.landmark || "",
+            country: guestAddress.country || "India"
+          }
+        })
       });
 
       const orderData = await orderRes.json();
@@ -217,24 +233,10 @@ export default function CartPage() {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({
+                internalOrderId: orderData.internalOrderId,
                 razorpay_payment_id: response.razorpay_payment_id,
                 razorpay_order_id: response.razorpay_order_id,
-                razorpay_signature: response.razorpay_signature,
-                customerDetails: {
-                  fullName: guestAddress.fullName || guestAddress.customerName,
-                  email: guestAddress.email,
-                  phone: guestAddress.phone,
-                  addressLine1: guestAddress.addressLine1,
-                  addressLine2: guestAddress.addressLine2 || "",
-                  city: guestAddress.city,
-                  state: guestAddress.state,
-                  pincode: guestAddress.pincode,
-                  landmark: guestAddress.landmark || "",
-                  country: guestAddress.country || "India"
-                },
-                items: itemsPayload,
-                total: cartTotal,
-                userId: null
+                razorpay_signature: response.razorpay_signature
               })
             });
 

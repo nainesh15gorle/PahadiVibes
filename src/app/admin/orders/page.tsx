@@ -84,7 +84,7 @@ export default function AdminOrdersPage() {
   const fetchOrders = async () => {
     try {
       setLoading(true);
-      const res = await fetch("/api/orders");
+      const res = await fetch(`/api/orders?t=${Date.now()}`, { cache: "no-store" });
       const data = await res.json();
       if (data.success) {
         // Sort orders by date descending
@@ -105,7 +105,7 @@ export default function AdminOrdersPage() {
 
     // Set up auto-refresh polling every 8 seconds in the background
     const interval = setInterval(() => {
-      fetch("/api/orders")
+      fetch(`/api/orders?t=${Date.now()}`, { cache: "no-store" })
         .then((res) => res.json())
         .then((data) => {
           if (data.success) {
