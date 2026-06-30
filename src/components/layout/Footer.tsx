@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Facebook, Instagram, Twitter, MapPin, Mail, Phone, Plus, Minus } from "lucide-react";
+import { Facebook, Instagram, Twitter, MapPin, Mail, Phone, Plus, Minus, Linkedin, ArrowUpRight } from "lucide-react";
 import { usePathname } from "next/navigation";
 
 export function Footer() {
@@ -110,12 +110,26 @@ export function Footer() {
 
         </div>
 
-        <div className="border-t border-border pt-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-3 text-left">
+        <div className="border-t border-border pt-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 text-left">
           <p className="text-muted-foreground text-xs">
             © {new Date().getFullYear()} Pahadi Vibes. All rights reserved.
           </p>
-          <div className="flex gap-4">
-            <span className="text-muted-foreground text-xs">Crafted with ♥ in India</span>
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs">
+            <span className="text-muted-foreground">Crafted with ♥ in India</span>
+            <span className="text-border hidden md:inline">|</span>
+            <a
+              href="https://www.linkedin.com/in/nainesh-gorle"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="group inline-flex items-center gap-1.5 text-muted-foreground hover:text-primary transition-all duration-300 relative py-1"
+            >
+              <Linkedin className="w-3.5 h-3.5 transition-transform duration-300 group-hover:scale-110" />
+              <span className="relative">
+                About the Developer
+                <span className="absolute bottom-0 left-0 w-0 h-[1px] bg-primary transition-all duration-300 group-hover:w-full" />
+              </span>
+              <ArrowUpRight className="w-3 h-3 opacity-0 -translate-y-0.5 translate-x-0.5 transition-all duration-300 group-hover:opacity-100 group-hover:translate-y-0 group-hover:translate-x-0" />
+            </a>
           </div>
         </div>
       </div>
