@@ -144,7 +144,7 @@ export async function POST(request: Request) {
       console.error("Supabase order insert error (Pending):", orderError);
       return NextResponse.json({ 
         success: false, 
-        error: "Failed to create order record." 
+        error: `Failed to create order record. Details: ${orderError.message || JSON.stringify(orderError)}` 
       }, { status: 500 });
     }
 
