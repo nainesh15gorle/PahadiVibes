@@ -192,7 +192,7 @@ export default function CartPage() {
         body: JSON.stringify({ 
           items: itemsPayload,
           total: cartTotal,
-          userId: user?.id || "anonymous",
+          userId: "anonymous",
           customerDetails: {
             fullName: guestAddress.fullName || guestAddress.customerName,
             email: guestAddress.email,
