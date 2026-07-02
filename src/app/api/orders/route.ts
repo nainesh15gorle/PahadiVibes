@@ -22,7 +22,10 @@ export async function GET(request: Request) {
       throw error;
     }
 
-    const mappedOrders = (orders || []).map(mapDbOrderToOrder);
+    const mappedOrders = (orders || [])
+      .map(mapDbOrderToOrder)
+      .filter((order) => order.paymentStatus !== "Pending");
+      
     return NextResponse.json({ success: true, data: mappedOrders });
   } catch (error) {
     console.error("GET /api/orders error:", error);
