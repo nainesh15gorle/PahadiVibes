@@ -16,11 +16,15 @@ export async function GET(request: Request) {
       }, { status: 400 });
     }
 
-    // Query order that matches both Order ID and Phone number
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(orderId);
+    const orQuery = isUuid 
+      ? `id.eq.${orderId},order_id.eq.${orderId},razorpay_order_id.eq.${orderId}`
+      : `order_id.eq.${orderId},razorpay_order_id.eq.${orderId}`;
+
     const { data: order, error } = await supabaseAdmin
       .from("orders")
       .select("*")
-      .or(`id.eq.${orderId},order_id.eq.${orderId}`)
+      .or(orQuery)
       .eq("phone", phone)
       .maybeSingle();
 
