@@ -79,6 +79,8 @@ export async function POST(request: Request) {
     // Call Razorpay API natively using fetch
     const authString = Buffer.from(`${keyId}:${keySecret}`).toString("base64");
     
+    const internalOrderId = crypto.randomUUID();
+
     const rzpResponse = await fetch("https://api.razorpay.com/v1/orders", {
       method: "POST",
       headers: {
@@ -113,8 +115,6 @@ export async function POST(request: Request) {
       customerDetails.landmark ? `Landmark: ${customerDetails.landmark}` : null,
       customerDetails.country || "India"
     ].filter(Boolean).join(", ");
-
-    const internalOrderId = crypto.randomUUID();
 
     const newOrder = {
       id: internalOrderId,
