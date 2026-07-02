@@ -21,12 +21,26 @@ export async function GET(request: Request) {
       ? `id.eq.${orderId},order_id.eq.${orderId},razorpay_order_id.eq.${orderId}`
       : `order_id.eq.${orderId},razorpay_order_id.eq.${orderId}`;
 
-    const { data: order, error } = await supabaseAdmin
+    let { data: order, error } = await supabaseAdmin
       .from("orders")
       .select("*")
       .or(orQuery)
       .eq("phone", phone)
       .maybeSingle();
+
+    // Fallback if razorpay_order_id column doesn't exist
+    if (error && (error.code === "PGRST111" || error.code === "42703" || error.message?.includes("razorpay_order_id"))) {
+      const fallbackOrQuery = isUuid ? `id.eq.${orderId},order_id.eq.${orderId}` : `order_id.eq.${orderId}`;
+      const fallback = await supabaseAdmin
+        .from("orders")
+        .select("*")
+        .or(fallbackOrQuery)
+        .eq("phone", phone)
+        .maybeSingle();
+      
+      order = fallback.data;
+      error = fallback.error;
+    }
 
     if (error) {
       console.error("Supabase track order fetch error:", error);
