@@ -6,41 +6,22 @@ export const dynamic = 'force-dynamic';
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
-    const orderId = searchParams.get("orderId")?.trim();
     const phone = searchParams.get("phone")?.trim();
 
-    if (!orderId || !phone) {
+    if (!phone) {
       return NextResponse.json({ 
         success: false, 
-        error: "Missing Order ID or Phone Number" 
+        error: "Missing Phone Number" 
       }, { status: 400 });
     }
-
-    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(orderId);
-    const orQuery = isUuid 
-      ? `id.eq.${orderId},order_id.eq.${orderId},razorpay_order_id.eq.${orderId}`
-      : `order_id.eq.${orderId},razorpay_order_id.eq.${orderId}`;
 
     let { data: order, error } = await supabaseAdmin
       .from("orders")
       .select("*")
-      .or(orQuery)
       .eq("phone", phone)
+      .order("created_at", { ascending: false })
+      .limit(1)
       .maybeSingle();
-
-    // Fallback if razorpay_order_id column doesn't exist
-    if (error && (error.code === "PGRST111" || error.code === "42703" || error.message?.includes("razorpay_order_id"))) {
-      const fallbackOrQuery = isUuid ? `id.eq.${orderId},order_id.eq.${orderId}` : `order_id.eq.${orderId}`;
-      const fallback = await supabaseAdmin
-        .from("orders")
-        .select("*")
-        .or(fallbackOrQuery)
-        .eq("phone", phone)
-        .maybeSingle();
-      
-      order = fallback.data;
-      error = fallback.error;
-    }
 
     if (error) {
       console.error("Supabase track order fetch error:", error);
@@ -50,7 +31,7 @@ export async function GET(request: Request) {
     if (!order) {
       return NextResponse.json({ 
         success: false, 
-        error: "No matching order found with the provided Order ID and Mobile Number." 
+        error: "No matching order found with the provided Mobile Number." 
       }, { status: 404 });
     }
 

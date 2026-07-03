@@ -35,7 +35,6 @@ interface TrackedOrder {
 }
 
 export default function TrackOrderPage() {
-  const [orderIdInput, setOrderIdInput] = useState("");
   const [phoneInput, setPhoneInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [order, setOrder] = useState<TrackedOrder | null>(null);
@@ -43,8 +42,8 @@ export default function TrackOrderPage() {
 
   const handleTrack = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!orderIdInput.trim() || !phoneInput.trim()) {
-      toast("Please enter both Order ID and Mobile Number.", "warning");
+    if (!phoneInput.trim()) {
+      toast("Please enter your Mobile Number.", "warning");
       return;
     }
 
@@ -52,7 +51,7 @@ export default function TrackOrderPage() {
     setOrder(null);
 
     try {
-      const res = await fetch(`/api/orders/track?orderId=${encodeURIComponent(orderIdInput.trim())}&phone=${encodeURIComponent(phoneInput.trim())}`);
+      const res = await fetch(`/api/orders/track?phone=${encodeURIComponent(phoneInput.trim())}`);
       const data = await res.json();
 
       if (data.success && data.data) {
@@ -103,27 +102,14 @@ export default function TrackOrderPage() {
           <span className="text-xs font-semibold text-primary tracking-widest uppercase mb-2 block">Pahadi Vibes Delivery</span>
           <h1 className="font-heading text-3xl md:text-4xl font-bold mb-4">Track Your Masterpiece</h1>
           <p className="text-muted-foreground text-sm leading-relaxed">
-            Enter your unique Order ID and the Mobile Number used during checkout to view real-time delivery timelines and artisan processing progress.
+            Enter the Mobile Number used during checkout to view real-time delivery timelines and artisan processing progress.
           </p>
         </div>
 
         {/* Tracking Input Card */}
         <div className="glass rounded-none p-6 md:p-8 border border-border/60 shadow-lg mb-10 max-w-2xl mx-auto">
           <form onSubmit={handleTrack} className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left">
-              <div className="flex flex-col gap-2">
-                <label htmlFor="orderId" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Order ID</label>
-                <input
-                  type="text"
-                  id="orderId"
-                  value={orderIdInput}
-                  onChange={(e) => setOrderIdInput(e.target.value)}
-                  className="h-12 border border-border bg-background px-4 text-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all rounded-none"
-                  placeholder="e.g. d68a35e4..."
-                  required
-                />
-              </div>
-
+            <div className="grid grid-cols-1 gap-6 text-left">
               <div className="flex flex-col gap-2">
                 <label htmlFor="phone" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Mobile Number</label>
                 <input
