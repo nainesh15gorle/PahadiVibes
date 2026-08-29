@@ -27,7 +27,16 @@ export type AgentActionType =
   | "PAYMENT_FAILURE_CAPTURED"
   | "PAYMENT_COMPLETED"
   | "CASE_INITIALIZED"
-  | "MANUAL_NOTE";
+  | "MANUAL_NOTE"
+  | "CASE_ANALYZED"
+  | "DIAGNOSIS_COMPLETED"
+  | "RECOVERY_SCORE_CALCULATED"
+  | "RECOVERY_ACTION_SELECTED"
+  | "POLICY_APPROVED"
+  | "POLICY_BLOCKED"
+  | "RECOVERY_INITIATED"
+  | "RECOVERY_COMPLETED"
+  | "RECOVERY_FAILED";
 
 export type AgentActionChannel =
   | "SYSTEM"
@@ -42,6 +51,24 @@ export type AgentActionStatus =
   | "EXECUTED"
   | "FAILED"
   | "CANCELLED";
+
+export type FailureCategory =
+  | "TEMPORARY_PAYMENT_FAILURE"
+  | "REPEATED_PAYMENT_FAILURE"
+  | "CUSTOMER_ABANDONMENT"
+  | "UNKNOWN_FAILURE"
+  | "NON_RECOVERABLE";
+
+export type RecoveryActionType =
+  | "RETRY_PAYMENT"
+  | "SEND_REMINDER"
+  | "NO_ACTION";
+
+export type ActionPriority =
+  | "CRITICAL"
+  | "HIGH"
+  | "MEDIUM"
+  | "LOW";
 
 export interface DbRevenueEvent {
   id: string;
@@ -121,5 +148,139 @@ export interface RecordRevenueEventResult {
   event: DbRevenueEvent | null;
   recoveryCase: DbRecoveryCase | null;
   action: DbAgentAction | null;
+  error?: string;
+}
+
+// ----------------------------------------------------
+// Agent Brain Interfaces
+// ----------------------------------------------------
+
+export interface DiagnosisContext {
+  previousAttemptsCount?: number;
+  previousEvents?: DbRevenueEvent[];
+  customerPreviousOrdersCount?: number;
+  customerSuccessfulOrdersCount?: number;
+  isRepeatFailure?: boolean;
+}
+
+export interface DiagnosisResult {
+  category: FailureCategory;
+  confidence: number; // 0.0 to 1.0
+  reason: string;
+  isRecoverable: boolean;
+  suggestedPath?: string;
+}
+
+export interface ScoreFactor {
+  factor: string;
+  impact: "POSITIVE" | "NEGATIVE" | "NEUTRAL";
+  weight: number;
+  description: string;
+}
+
+export interface RecoveryScoreInput {
+  amount: number;
+  diagnosis: DiagnosisResult;
+  customerPreviousOrders?: number;
+  customerSuccessfulOrders?: number;
+  previousRecoveryAttempts?: number;
+  isRepeatedFailure?: boolean;
+  lastFailureTime?: string | Date;
+}
+
+export interface RecoveryScoreResult {
+  recoveryProbability: number; // 0.00 to 1.00
+  expectedRecovery: number;    // amount * recoveryProbability
+  factors: ScoreFactor[];
+  reasoning: string;
+}
+
+export interface CustomerContext {
+  customerId?: string | null;
+  customerName?: string | null;
+  customerEmail?: string | null;
+  customerPhone?: string | null;
+  totalOrdersCount?: number;
+  successfulOrdersCount?: number;
+  totalSpent?: number;
+}
+
+export interface DecisionEngineInput {
+  revenueEvent?: DbRevenueEvent | null;
+  recoveryCase?: DbRecoveryCase | null;
+  diagnosis: DiagnosisResult;
+  recoveryProbability: number;
+  expectedRecovery: number;
+  customerContext?: CustomerContext;
+  previousAttemptsCount?: number;
+}
+
+export interface RecoveryDecision {
+  action: RecoveryActionType;
+  priority: ActionPriority;
+  expectedRecovery: number;
+  reason: string;
+  suggestedChannel?: AgentActionChannel;
+}
+
+export interface RecoveryPolicyConfig {
+  automaticRecoveryEnabled: boolean;
+  maxRetryAttempts: number;
+  maxAutomaticRecoveryAmount: number;
+  minRecoveryProbabilityThreshold?: number;
+}
+
+export interface PolicyEvaluationInput {
+  action: RecoveryActionType;
+  amount: number;
+  retryCount: number;
+  recoveryStatus: RecoveryCaseStatus;
+  recoveryProbability?: number;
+  caseId?: string;
+  config?: Partial<RecoveryPolicyConfig>;
+  previousActions?: DbAgentAction[];
+}
+
+export interface PolicyEvaluationResult {
+  allowed: boolean;
+  reason: string;
+  violatedPolicy?: string;
+  policyConfig: RecoveryPolicyConfig;
+}
+
+export interface RecoveryExecutionInput {
+  recoveryCase: DbRecoveryCase;
+  revenueEvent?: DbRevenueEvent | null;
+  decision: RecoveryDecision;
+  policy: PolicyEvaluationResult;
+}
+
+export interface ExecutionResult {
+  success: boolean;
+  status: "INITIATED" | "COMPLETED" | "SKIPPED" | "FAILED";
+  actionType: RecoveryActionType;
+  channel: AgentActionChannel;
+  executionDetails: Record<string, any>;
+  error?: string;
+}
+
+export interface AgentExecutionOptions {
+  policyConfig?: Partial<RecoveryPolicyConfig>;
+  skipExecution?: boolean; // Dry-run mode for simulation / scoring analysis
+  customContext?: Partial<CustomerContext>;
+}
+
+export interface AgentProcessResult {
+  success: boolean;
+  caseId: string;
+  orderId?: string;
+  diagnosis: DiagnosisResult;
+  recoveryProbability: number;
+  expectedRecovery: number;
+  scoreFactors: ScoreFactor[];
+  decision: RecoveryDecision;
+  policy: PolicyEvaluationResult;
+  execution: ExecutionResult;
+  auditActionsRecorded: string[];
   error?: string;
 }
