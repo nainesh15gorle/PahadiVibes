@@ -274,6 +274,7 @@ export interface AgentProcessResult {
   success: boolean;
   caseId: string;
   orderId?: string;
+  eventId?: string;
   diagnosis: DiagnosisResult;
   recoveryProbability: number;
   expectedRecovery: number;
