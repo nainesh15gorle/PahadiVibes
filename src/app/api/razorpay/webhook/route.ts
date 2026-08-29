@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import crypto from "crypto";
 import { supabaseAdmin, updateOrderStatusSafe, mapDbOrderToOrder } from "@/lib/supabase";
+import { recordRevenueEvent } from "@/lib/ai/revenue-events";
 
 export const dynamic = 'force-dynamic';
 
@@ -102,11 +103,28 @@ export async function POST(request: Request) {
         }
       }
 
+      // Record successful payment revenue event for Pahadi AI (idempotent)
+      recordRevenueEvent({
+        eventId: `rzp_evt_${event.id || razorpayPaymentId || internalOrderId}_paid`,
+        eventType: "PAYMENT_SUCCESS",
+        orderId: internalOrderId,
+        razorpayOrderId: razorpayOrderId,
+        razorpayPaymentId: razorpayPaymentId,
+        customerId: order.userId,
+        customerName: order.customerName,
+        customerEmail: order.email,
+        customerPhone: order.phone,
+        amount: order.total,
+        cartItems: order.items,
+        rawPayload: { event: event.event, payload: event.payload }
+      }).catch((err) => console.warn("Pahadi AI webhook event record warning:", err));
+
       console.log(`Webhook: Order ${internalOrderId} successfully marked as Paid.`);
     } 
     else if (event.event === "payment.failed") {
       const paymentEntity = event.payload.payment?.entity;
       const internalOrderId = paymentEntity?.notes?.internalOrderId;
+      const failureReason = paymentEntity?.error_description || paymentEntity?.error_reason || "Payment failed at gateway";
 
       if (internalOrderId) {
         const updateFields = {
@@ -116,6 +134,21 @@ export async function POST(request: Request) {
         };
         await updateOrderStatusSafe(internalOrderId, updateFields);
         console.log(`Webhook: Order ${internalOrderId} marked as Failed.`);
+
+        // Record payment failure revenue event for Pahadi AI
+        recordRevenueEvent({
+          eventId: `rzp_evt_${event.id || paymentEntity?.id || internalOrderId}_failed`,
+          eventType: "PAYMENT_FAILED",
+          orderId: internalOrderId,
+          razorpayOrderId: paymentEntity?.order_id,
+          razorpayPaymentId: paymentEntity?.id,
+          customerEmail: paymentEntity?.email,
+          customerPhone: paymentEntity?.contact,
+          amount: paymentEntity?.amount ? paymentEntity.amount / 100 : 0,
+          currency: paymentEntity?.currency || "INR",
+          failureReason: failureReason,
+          rawPayload: { event: event.event, payload: event.payload }
+        }).catch((err) => console.warn("Pahadi AI webhook event record warning:", err));
       }
     }
 

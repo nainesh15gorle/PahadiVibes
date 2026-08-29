@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin, mapOrderToDbOrder, insertOrderSafe } from "@/lib/supabase";
+import { recordRevenueEvent } from "@/lib/ai/revenue-events";
 import crypto from "crypto";
 
 export const dynamic = 'force-dynamic';
@@ -147,6 +148,21 @@ export async function POST(request: Request) {
         error: `Failed to create order record. Details: ${orderError.message || JSON.stringify(orderError)}` 
       }, { status: 500 });
     }
+
+    // Safely record revenue event for Pahadi AI (non-blocking)
+    recordRevenueEvent({
+      eventType: "ORDER_CREATED",
+      orderId: internalOrderId,
+      razorpayOrderId: orderData.id,
+      customerId: userId === "anonymous" || !userId ? null : userId,
+      customerName: customerDetails.customerName || customerDetails.fullName,
+      customerEmail: customerDetails.email,
+      customerPhone: customerDetails.phone,
+      amount: calculatedTotal,
+      currency: orderData.currency || "INR",
+      cartItems: validatedItems,
+      rawPayload: { razorpayOrder: orderData }
+    }).catch((err) => console.warn("Pahadi AI event record non-blocking warning:", err));
 
     return NextResponse.json({
       success: true,

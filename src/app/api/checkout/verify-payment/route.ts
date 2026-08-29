@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import crypto from "crypto";
 import { supabaseAdmin, updateOrderStatusSafe, mapDbOrderToOrder } from "@/lib/supabase";
+import { recordRevenueEvent } from "@/lib/ai/revenue-events";
 
 export const dynamic = 'force-dynamic';
 
@@ -57,6 +58,23 @@ export async function POST(request: Request) {
         generated: generatedSignature,
         received: razorpay_signature
       });
+
+      // Record payment failure for Pahadi AI
+      recordRevenueEvent({
+        eventType: "PAYMENT_FAILED",
+        orderId: internalOrderId,
+        razorpayOrderId: razorpay_order_id,
+        razorpayPaymentId: razorpay_payment_id,
+        customerId: order.userId,
+        customerName: order.customerName,
+        customerEmail: order.email,
+        customerPhone: order.phone,
+        amount: order.total,
+        failureReason: "Payment verification signature mismatch",
+        cartItems: order.items,
+        rawPayload: { razorpay_order_id, razorpay_payment_id }
+      }).catch((err) => console.warn("Pahadi AI event record non-blocking warning:", err));
+
       return NextResponse.json({ success: false, error: "Payment verification failed. Invalid signature." }, { status: 400 });
     }
 
@@ -110,6 +128,21 @@ export async function POST(request: Request) {
         console.error("Failed to sync customer profile on verified payment:", customerError);
       }
     }
+
+    // Record verified payment success for Pahadi AI (resolves recovery case)
+    recordRevenueEvent({
+      eventType: "PAYMENT_SUCCESS",
+      orderId: internalOrderId,
+      razorpayOrderId: razorpay_order_id,
+      razorpayPaymentId: razorpay_payment_id,
+      customerId: order.userId,
+      customerName: order.customerName,
+      customerEmail: order.email,
+      customerPhone: order.phone,
+      amount: order.total,
+      cartItems: order.items,
+      rawPayload: { razorpay_order_id, razorpay_payment_id }
+    }).catch((err) => console.warn("Pahadi AI event record non-blocking warning:", err));
 
     return NextResponse.json({
       success: true,
