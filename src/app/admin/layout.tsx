@@ -8,6 +8,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   LayoutDashboard,
+  Bot,
   Package,
   Boxes,
   FolderTree,
@@ -42,6 +43,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   const navLinks = [
     { name: "Dashboard", href: "/admin/dashboard", icon: LayoutDashboard },
+    { name: "Pahadi AI", href: "/admin/pahadi-ai", icon: Bot },
     { name: "Products", href: "/admin/products", icon: Package },
     { name: "Inventory", href: "/admin/inventory", icon: Boxes },
     { name: "Categories", href: "/admin/categories", icon: FolderTree },

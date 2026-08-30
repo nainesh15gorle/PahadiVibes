@@ -12,6 +12,35 @@ export const DEFAULT_RECOVERY_POLICY: RecoveryPolicyConfig = {
   minRecoveryProbabilityThreshold: 0.10
 };
 
+let currentActivePolicy: RecoveryPolicyConfig = { ...DEFAULT_RECOVERY_POLICY };
+
+export function getActiveRecoveryPolicy(): RecoveryPolicyConfig {
+  return { ...currentActivePolicy };
+}
+
+export function updateActiveRecoveryPolicy(
+  updates: Partial<RecoveryPolicyConfig>
+): RecoveryPolicyConfig {
+  currentActivePolicy = {
+    ...currentActivePolicy,
+    ...updates,
+    // Ensure safety bounds
+    maxRetryAttempts:
+      typeof updates.maxRetryAttempts === "number"
+        ? Math.max(1, Math.min(10, updates.maxRetryAttempts))
+        : currentActivePolicy.maxRetryAttempts,
+    maxAutomaticRecoveryAmount:
+      typeof updates.maxAutomaticRecoveryAmount === "number"
+        ? Math.max(100, updates.maxAutomaticRecoveryAmount)
+        : currentActivePolicy.maxAutomaticRecoveryAmount,
+    minRecoveryProbabilityThreshold:
+      typeof updates.minRecoveryProbabilityThreshold === "number"
+        ? Math.max(0.01, Math.min(0.99, updates.minRecoveryProbabilityThreshold))
+        : currentActivePolicy.minRecoveryProbabilityThreshold
+  };
+  return { ...currentActivePolicy };
+}
+
 /**
  * Policy Engine for Pahadi AI (Financial Safety Gate)
  *
@@ -32,7 +61,7 @@ export function evaluatePolicy(
   } = input;
 
   const policyConfig: RecoveryPolicyConfig = {
-    ...DEFAULT_RECOVERY_POLICY,
+    ...currentActivePolicy,
     ...customConfig
   };
 

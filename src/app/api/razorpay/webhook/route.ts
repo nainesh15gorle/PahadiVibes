@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import crypto from "crypto";
 import { supabaseAdmin, updateOrderStatusSafe, mapDbOrderToOrder } from "@/lib/supabase";
 import { recordRevenueEvent } from "@/lib/ai/revenue-events";
+import { processRecoveryPaymentWebhook } from "@/lib/ai/recovery-executor";
 
 export const dynamic = 'force-dynamic';
 
@@ -34,7 +35,25 @@ export async function POST(request: Request) {
     const event = JSON.parse(rawBody);
     console.log(`Razorpay Webhook received event: ${event.event}`);
 
-    // Handle supported events
+    // First attempt Pahadi AI recovery case processing
+    const recoveryResult = await processRecoveryPaymentWebhook({
+      rawBody,
+      signature,
+      webhookSecret,
+      event
+    });
+
+    if (recoveryResult.recoveryProcessed || recoveryResult.isDuplicate) {
+      console.log(`Webhook: Successfully handled via Pahadi AI Recovery (Case: ${recoveryResult.caseId}).`);
+      return NextResponse.json({
+        success: true,
+        message: recoveryResult.message || "Recovery webhook processed successfully",
+        recoveryProcessed: recoveryResult.recoveryProcessed,
+        caseId: recoveryResult.caseId
+      });
+    }
+
+    // Handle standard checkout events if not handled by recovery workflow
     if (event.event === "order.paid" || event.event === "payment.captured") {
       const paymentEntity = event.payload.payment?.entity;
       const orderEntity = event.payload.order?.entity;

@@ -36,6 +36,7 @@ export type AgentActionType =
   | "POLICY_BLOCKED"
   | "RECOVERY_INITIATED"
   | "RECOVERY_COMPLETED"
+  | "PAYMENT_RECOVERED"
   | "RECOVERY_FAILED";
 
 export type AgentActionChannel =
@@ -262,6 +263,14 @@ export interface ExecutionResult {
   channel: AgentActionChannel;
   executionDetails: Record<string, any>;
   error?: string;
+  paymentLink?: {
+    id: string;
+    shortUrl: string;
+    amount: number;
+    currency: string;
+    status: string;
+    expiresAt?: string;
+  };
 }
 
 export interface AgentExecutionOptions {
