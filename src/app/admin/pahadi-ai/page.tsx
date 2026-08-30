@@ -29,7 +29,8 @@ import {
   Copy,
   Layers,
   BarChart3,
-  Bot
+  Bot,
+  MessageSquare
 } from "lucide-react";
 import {
   ResponsiveContainer,
@@ -737,9 +738,17 @@ export default function PahadiAIDashboard() {
             ) : (
               activity.map((act) => {
                 let badgeColor = "bg-blue-500/10 text-blue-400 border-blue-500/20";
-                if (act.action_type === "POLICY_APPROVED" || act.action_type === "PAYMENT_RECOVERED") {
+                if (
+                  act.action_type === "POLICY_APPROVED" ||
+                  act.action_type === "PAYMENT_RECOVERED" ||
+                  act.action_type === "WHATSAPP_NOTIFICATION_SENT"
+                ) {
                   badgeColor = "bg-emerald-500/10 text-emerald-400 border-emerald-500/20";
-                } else if (act.action_type === "POLICY_BLOCKED" || act.action_type === "RECOVERY_FAILED") {
+                } else if (
+                  act.action_type === "POLICY_BLOCKED" ||
+                  act.action_type === "RECOVERY_FAILED" ||
+                  act.action_type === "WHATSAPP_NOTIFICATION_FAILED"
+                ) {
                   badgeColor = "bg-rose-500/10 text-rose-400 border-rose-500/20";
                 } else if (act.action_type === "RECOVERY_INITIATED") {
                   badgeColor = "bg-[#C8A951]/10 text-[#C8A951] border-[#C8A951]/20";
@@ -1259,6 +1268,42 @@ export default function PahadiAIDashboard() {
                         </button>
                       </div>
                     )}
+
+                    {/* WhatsApp Merchant Notification Status */}
+                    <div className="p-4 rounded-xl bg-white/5 border border-white/5 flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 rounded-lg bg-emerald-500/10 text-emerald-400">
+                          <MessageSquare className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <div className="text-xs font-bold text-white uppercase">Merchant WhatsApp Status</div>
+                          <div className="text-[11px] text-white/50">
+                            {selectedCaseData.actions?.some(
+                              (a: any) =>
+                                a.action_type === "WHATSAPP_NOTIFICATION_SENT" ||
+                                (a.channel === "WHATSAPP" && a.status === "EXECUTED")
+                            )
+                              ? "✓ Merchant Alert Dispatched"
+                              : selectedCaseData.actions?.some(
+                                  (a: any) =>
+                                    a.action_type === "WHATSAPP_NOTIFICATION_FAILED" ||
+                                    (a.channel === "WHATSAPP" && a.status === "FAILED")
+                                )
+                              ? "⚠ Alert Failed (Isolated)"
+                              : "● Monitoring & Notification Ready"}
+                          </div>
+                        </div>
+                      </div>
+                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                        {selectedCaseData.actions?.some(
+                          (a: any) =>
+                            a.action_type === "WHATSAPP_NOTIFICATION_SENT" ||
+                            (a.channel === "WHATSAPP" && a.status === "EXECUTED")
+                        )
+                          ? "Dispatched"
+                          : "Active (Mock Mode)"}
+                      </span>
+                    </div>
                   </>
                 ) : (
                   <div className="text-center text-white/40">Case data not available.</div>

@@ -13,3 +13,4 @@ export * from "./decision-engine";
 export * from "./policy-engine";
 export * from "./recovery-executor";
 export * from "./agent";
+export * from "./notifications";

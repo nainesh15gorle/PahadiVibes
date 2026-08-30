@@ -20,6 +20,11 @@ import { calculateRecoveryScore } from "./recovery-score";
 import { selectRecoveryAction } from "./decision-engine";
 import { evaluatePolicy, DEFAULT_RECOVERY_POLICY } from "./policy-engine";
 import { executeRecoveryAction } from "./recovery-executor";
+import {
+  notifyRecoveryInitiated,
+  notifyRecoveryFailed,
+  notifyRecoveryOpportunity
+} from "./notifications";
 
 /**
  * Helper to record an agent action to Supabase with non-blocking error handling
@@ -455,6 +460,21 @@ export async function processRecoveryCase(
             }
           })
           .eq("id", caseDbId);
+
+        // Merchant WhatsApp Notification (Failure-Isolated)
+        notifyRecoveryInitiated({
+          caseId: recoveryCase.case_id,
+          caseDbId,
+          orderId: recoveryCase.order_id,
+          customerName: recoveryCase.customer_name || "Valued Customer",
+          amount: Number(recoveryCase.amount),
+          action: decision.action,
+          recoveryUrl:
+            executionResult.paymentLink?.shortUrl ||
+            `/checkout/success?recovery_order_id=${encodeURIComponent(recoveryCase.order_id)}`
+        }).catch((notifErr) =>
+          console.warn("Pahadi AI [WhatsApp notification non-blocking notice]:", notifErr)
+        );
       } else {
         await recordAuditAction({
           caseDbId,
@@ -465,6 +485,18 @@ export async function processRecoveryCase(
           reasoning: `Recovery execution encountered an issue: ${executionResult.error || "Unknown execution error"}`
         });
         auditActionsRecorded.push("RECOVERY_FAILED");
+
+        // Merchant WhatsApp Notification for Failure (Failure-Isolated)
+        notifyRecoveryFailed({
+          caseId: recoveryCase.case_id,
+          caseDbId,
+          orderId: recoveryCase.order_id,
+          customerName: recoveryCase.customer_name || "Valued Customer",
+          amount: Number(recoveryCase.amount),
+          reason: executionResult.error || "Recovery execution blocked or failed"
+        }).catch((notifErr) =>
+          console.warn("Pahadi AI [WhatsApp notification non-blocking notice]:", notifErr)
+        );
       }
     }
 

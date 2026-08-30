@@ -37,7 +37,9 @@ export type AgentActionType =
   | "RECOVERY_INITIATED"
   | "RECOVERY_COMPLETED"
   | "PAYMENT_RECOVERED"
-  | "RECOVERY_FAILED";
+  | "RECOVERY_FAILED"
+  | "WHATSAPP_NOTIFICATION_SENT"
+  | "WHATSAPP_NOTIFICATION_FAILED";
 
 export type AgentActionChannel =
   | "SYSTEM"

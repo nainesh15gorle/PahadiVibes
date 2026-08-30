@@ -2,6 +2,7 @@
 import crypto from "crypto";
 import { supabaseAdmin, updateOrderStatusSafe, mapDbOrderToOrder } from "@/lib/supabase";
 import { recordRevenueEvent } from "./revenue-events";
+import { notifyPaymentRecovered } from "./notifications";
 import type {
   AgentActionChannel,
   DbRecoveryCase,
@@ -662,6 +663,22 @@ export async function processRecoveryPaymentWebhook(
       rawPayload: { event: event.event, payload: event.payload }
     }).catch((err) => console.warn("Pahadi AI webhook revenue event record warning:", err));
   }
+
+  // 11. Send WhatsApp Merchant Notification for PAYMENT_RECOVERED (Failure-Isolated)
+  notifyPaymentRecovered(
+    {
+      caseId: recoveryCase.case_id,
+      caseDbId: recoveryCase.id,
+      orderId: recoveryCase.order_id,
+      customerName: recoveryCase.customer_name || "Valued Customer",
+      amount: Number(recoveryCase.amount),
+      currency: recoveryCase.currency || "INR",
+      action: "Payment Recovery"
+    },
+    { supabaseClient: params.supabaseClient }
+  ).catch((notifErr) =>
+    console.warn("Pahadi AI [WhatsApp payment recovered notification notice]:", notifErr)
+  );
 
   return {
     success: true,
