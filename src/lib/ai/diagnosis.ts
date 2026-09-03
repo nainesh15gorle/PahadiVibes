@@ -59,7 +59,14 @@ export function diagnoseRevenueEvent(
   }
 
   // 2. Check for repeated failures
-  if (isRepeat || failureText.includes("multiple attempts") || failureText.includes("too many attempts")) {
+  if (
+    isRepeat ||
+    failureText.includes("multiple attempts") ||
+    failureText.includes("too many attempts") ||
+    failureText.includes("repeated payment failure") ||
+    failureText.includes("repeated failure") ||
+    (failureText.includes("multiple") && failureText.includes("attempts"))
+  ) {
     return {
       category: "REPEATED_PAYMENT_FAILURE",
       confidence: 0.88,

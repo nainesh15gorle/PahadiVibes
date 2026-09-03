@@ -44,7 +44,17 @@ export async function GET() {
 
     const actions = actionsData || [];
 
-    // 4. Calculate Real Metrics from actual DB rows
+    // 4. Calculate Real Production Metrics (Strict Demo Data Isolation)
+    // Simulated demo cases must NEVER pollute real production financial KPIs
+    const isDemoRecord = (c: any) =>
+      c.metadata?.demo === true ||
+      c.metadata?.is_demo === true ||
+      c.metadata?.source === "pahadi_ai_demo" ||
+      (c.order_id && String(c.order_id).startsWith("demo-"));
+
+    const prodCases = cases.filter((c: any) => !isDemoRecord(c));
+    const demoCases = cases.filter((c: any) => isDemoRecord(c));
+
     let revenueAtRisk = 0;
     let revenueRecovered = 0;
     let totalDropoffRevenue = 0;
@@ -57,7 +67,7 @@ export async function GET() {
       DISMISSED: 0
     };
 
-    cases.forEach((c: any) => {
+    prodCases.forEach((c: any) => {
       const amt = Number(c.amount) || 0;
       totalDropoffRevenue += amt;
 
@@ -76,7 +86,7 @@ export async function GET() {
     });
 
     const activeCasesCount = statusCounts["OPEN"] + statusCounts["IN_RECOVERY"];
-    const totalCasesCount = cases.length;
+    const totalCasesCount = prodCases.length;
 
     // Defined recovery rate: recovered / (recovered + at_risk)
     const recoveryDenominator = revenueRecovered + revenueAtRisk;
@@ -89,6 +99,17 @@ export async function GET() {
       totalCasesCount > 0
         ? Math.round((statusCounts["RECOVERED"] / totalCasesCount) * 1000) / 10
         : 0;
+
+    // Demo-only metrics (tracked for sandbox visibility without inflating production revenue)
+    let demoRevenueSimulated = 0;
+    let demoRevenueRecovered = 0;
+    demoCases.forEach((c: any) => {
+      const amt = Number(c.amount) || 0;
+      demoRevenueSimulated += amt;
+      if (c.recovery_status === "RECOVERED") {
+        demoRevenueRecovered += amt;
+      }
+    });
 
     // 5. Calculate Actions breakdown
     const actionCounts: Record<string, number> = {
@@ -116,7 +137,7 @@ export async function GET() {
       daysMap[dateKey] = { date: label, atRisk: 0, recovered: 0, events: 0 };
     }
 
-    cases.forEach((c: any) => {
+    prodCases.forEach((c: any) => {
       if (c.created_at) {
         const dateKey = c.created_at.split("T")[0];
         if (daysMap[dateKey]) {
@@ -153,6 +174,11 @@ export async function GET() {
         totalCasesCount,
         totalEventsCount: events.length,
         totalActionsCount: actions.length
+      },
+      demoStats: {
+        demoCasesCount: demoCases.length,
+        demoRevenueSimulated,
+        demoRevenueRecovered
       },
       statusCounts,
       actionCounts,

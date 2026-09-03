@@ -1141,8 +1141,46 @@ export default function PahadiAIDashboard() {
                 </span>
               </div>
 
-              <div className="p-4 rounded-xl bg-black/50 border border-white/10 font-mono text-xs text-emerald-300 overflow-x-auto max-h-72">
-                <pre>{JSON.stringify(demoResult.result, null, 2)}</pre>
+              {/* Visual Execution Sequence Flow */}
+              {demoResult.result?.executionSequence && Array.isArray(demoResult.result.executionSequence) && (
+                <div className="p-4 rounded-xl bg-gradient-to-br from-[#161616] to-[#201D14] border border-[#C8A951]/20 flex flex-col gap-2.5">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-[#C8A951] flex items-center gap-2">
+                    <Sparkles className="w-3.5 h-3.5" /> Pipeline Execution Sequence
+                  </span>
+                  <div className="flex flex-col gap-2 pt-1">
+                    {demoResult.result.executionSequence.map((step: string, idx: number) => {
+                      const [title, ...details] = step.split("\n");
+                      return (
+                        <div key={idx} className="flex flex-col">
+                          <div className="flex items-start gap-3 p-2.5 rounded-lg bg-black/40 border border-white/5">
+                            <span className="w-5 h-5 rounded-full bg-[#C8A951]/20 text-[#C8A951] text-[10px] font-mono flex items-center justify-center font-bold flex-shrink-0 mt-0.5">
+                              {idx + 1}
+                            </span>
+                            <div className="flex flex-col">
+                              <span className="text-xs font-bold text-white uppercase tracking-wide">{title}</span>
+                              {details.length > 0 && (
+                                <span className="text-xs font-mono text-emerald-400 mt-0.5">{details.join(" ")}</span>
+                              )}
+                            </div>
+                          </div>
+                          {idx < demoResult.result.executionSequence.length - 1 && (
+                            <div className="flex justify-center my-0.5">
+                              <span className="text-xs text-[#C8A951]/60 font-bold">↓</span>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Complete JSON Payload */}
+              <div className="flex flex-col gap-1.5">
+                <span className="text-[11px] font-mono uppercase tracking-wider text-white/50">Full Agent Response Payload</span>
+                <div className="p-4 rounded-xl bg-black/50 border border-white/10 font-mono text-xs text-emerald-300 overflow-x-auto max-h-72">
+                  <pre>{JSON.stringify(demoResult.result, null, 2)}</pre>
+                </div>
               </div>
             </motion.div>
           )}

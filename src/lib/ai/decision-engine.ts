@@ -50,18 +50,8 @@ export function selectRecoveryAction(
     };
   }
 
-  // 3. Rule 2: Max attempts already reached at decision time
-  if (previousAttemptsCount >= 2) {
-    return {
-      action: "NO_ACTION",
-      priority: "LOW",
-      expectedRecovery,
-      reason: `No recovery action selected: Maximum retry attempts (${previousAttemptsCount}) reached.`,
-      suggestedChannel: "SYSTEM"
-    };
-  }
-
-  // 4. Rule 3: Temporary payment failure with high probability (>= 0.60) -> RETRY_PAYMENT
+  // 3. Rule 2: Temporary payment failure with high probability (>= 0.60) -> RETRY_PAYMENT
+  // Note: If retry limits are reached, the Policy Engine (Financial Safety Gate) strictly blocks execution with MAX_RETRIES_EXCEEDED
   if (
     diagnosis.category === "TEMPORARY_PAYMENT_FAILURE" &&
     recoveryProbability >= 0.60
@@ -71,6 +61,17 @@ export function selectRecoveryAction(
       priority,
       expectedRecovery,
       reason: "High recovery probability combined with temporary payment failure and strong customer history.",
+      suggestedChannel: "SYSTEM"
+    };
+  }
+
+  // 4. Rule 3: Max attempts already reached at decision time for other categories
+  if (previousAttemptsCount >= 2) {
+    return {
+      action: "NO_ACTION",
+      priority: "LOW",
+      expectedRecovery,
+      reason: `No recovery action selected: Maximum retry attempts (${previousAttemptsCount}) reached.`,
       suggestedChannel: "SYSTEM"
     };
   }

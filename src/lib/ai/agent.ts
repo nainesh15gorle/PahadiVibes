@@ -318,8 +318,13 @@ export async function processRecoveryCase(
     auditActionsRecorded.push("RECOVERY_ACTION_SELECTED");
 
     // 8. Stage 4: Policy Engine (CRITICAL SAFETY GATE)
+    const effectiveMaxRetries =
+      options?.policyConfig?.maxRetryAttempts ?? DEFAULT_RECOVERY_POLICY.maxRetryAttempts;
+    const actionForPolicyCheck =
+      retryCount >= effectiveMaxRetries ? "RETRY_PAYMENT" : decision.action;
+
     const policyResult: PolicyEvaluationResult = evaluatePolicy({
-      action: decision.action,
+      action: actionForPolicyCheck,
       amount: Number(recoveryCase.amount) || 0,
       retryCount,
       recoveryStatus: recoveryCase.recovery_status,

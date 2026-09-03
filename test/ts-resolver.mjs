@@ -7,6 +7,14 @@ import ts from "typescript";
 const workspaceRoot = process.cwd();
 
 export async function resolve(specifier, context, nextResolve) {
+  if (specifier === "next/server") {
+    const nextServerPath = path.resolve(process.cwd(), "node_modules/next/server.js");
+    return {
+      url: pathToFileURL(nextServerPath).href,
+      shortCircuit: true
+    };
+  }
+
   if (specifier === "next/headers") {
     return {
       url: "data:text/javascript,export const cookies = async () => ({ get: () => null, set: () => {}, delete: () => {} }); export const headers = async () => new Headers();",
