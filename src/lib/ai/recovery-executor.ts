@@ -57,7 +57,14 @@ export async function createRazorpayPaymentLink(
   const baseUrl = options?.baseUrl || process.env.NEXT_PUBLIC_APP_URL || "https://pahadivibes.com";
 
   // In test / offline mode without live credentials, return deterministic link structure
-  if (!options?.fetcher && (!keyId || !keySecret)) {
+  const isPlaceholderKey =
+    !keyId ||
+    !keySecret ||
+    keyId.includes("XXXXXXXX") ||
+    keySecret === "TEST_SECRET" ||
+    keyId === "rzp_test_dummy_key";
+
+  if (!options?.fetcher && isPlaceholderKey) {
     const cleanId = recoveryCase.order_id.replace(/[^a-zA-Z0-9]/g, "");
     return {
       id: `plink_test_${cleanId}`,
@@ -567,6 +574,7 @@ export async function processRecoveryPaymentWebhook(
       updated_at: now,
       last_event_id: `rzp_evt_${event.id || razorpayPaymentId || recoveryCase.order_id}_paid`,
       razorpay_order_id: razorpayOrderId || recoveryCase.razorpay_order_id,
+      razorpay_payment_id: razorpayPaymentId || null,
       metadata: {
         ...recoveryCase.metadata,
         verifiedPayment: {

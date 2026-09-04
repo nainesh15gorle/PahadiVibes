@@ -98,6 +98,7 @@ export interface DbRecoveryCase {
   case_id: string;
   order_id: string;
   razorpay_order_id: string | null;
+  razorpay_payment_id?: string | null;
   customer_id: string | null;
   customer_name: string | null;
   customer_email: string | null;
