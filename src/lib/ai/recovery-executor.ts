@@ -10,6 +10,13 @@ import type {
   RecoveryExecutionInput
 } from "./types";
 
+import { logRazorpayStartupCheck } from "./razorpay-config";
+import { logWhatsAppStartupDiagnostics } from "@/lib/whatsapp";
+
+// Run safe configuration diagnostics check on module initialization
+logRazorpayStartupCheck();
+logWhatsAppStartupDiagnostics();
+
 export interface CreatePaymentLinkOptions {
   keyId?: string;
   keySecret?: string;
@@ -72,7 +79,7 @@ export async function createRazorpayPaymentLink(
       status: "created",
       amount: amountPaise,
       currency,
-      expire_by: Math.floor(Date.now() / 1000) + 86400
+      expire_by: Math.floor(Date.now() / 1000) + 3600
     };
   }
 
@@ -108,7 +115,8 @@ export async function createRazorpayPaymentLink(
     callback_url: `${baseUrl}/checkout/success?recovery_order_id=${encodeURIComponent(
       recoveryCase.order_id
     )}`,
-    callback_method: "get"
+    callback_method: "get",
+    expire_by: Math.floor(Date.now() / 1000) + 3600
   };
 
   const authString = Buffer.from(`${keyId}:${keySecret}`).toString("base64");
@@ -437,6 +445,27 @@ export async function processRecoveryPaymentWebhook(
     };
   }
 
+  // 2.1 Webhook Replay Protection / Event Deduplication (live mode)
+  if (!params.supabaseClient && event.id) {
+    const dedupEventId = `rzp_evt_dedup_${event.id}`;
+    const selectQuery: any = db.from("revenue_events").select("id");
+    if (typeof selectQuery.eq === "function") {
+      const { data: existingDedup } = await selectQuery.eq("event_id", dedupEventId).maybeSingle();
+
+      if (existingDedup) {
+        console.log(`Pahadi AI Webhook: Event ID ${event.id} already processed. Idempotent return.`);
+        return {
+          success: true,
+          statusCode: 200,
+          recoveryProcessed: false,
+          isDuplicate: true,
+          status: "RECOVERED",
+          message: "Webhook event already processed (idempotent)."
+        };
+      }
+    }
+  }
+
   // 3. Extract Recovery Entity & Identifiers
   const plinkEntity = event.payload?.payment_link?.entity;
   const paymentEntity = event.payload?.payment?.entity;
@@ -476,8 +505,14 @@ export async function processRecoveryPaymentWebhook(
     "INR"
   ).toUpperCase();
 
-  // If no recovery case identifiers found in notes, skip recovery processing
-  if (!caseIdFromNotes && !orderIdFromNotes && !paymentLinkId) {
+  // If no recovery case identifiers or recovery source found in notes, skip recovery processing
+  const isRecoveryWebhook =
+    plinkEntity?.notes?.source === "pahadi_ai_recovery" ||
+    paymentEntity?.notes?.source === "pahadi_ai_recovery" ||
+    orderEntity?.notes?.source === "pahadi_ai_recovery" ||
+    Boolean(caseIdFromNotes);
+
+  if (!isRecoveryWebhook) {
     return {
       success: true,
       statusCode: 200,
@@ -565,8 +600,8 @@ export async function processRecoveryPaymentWebhook(
 
   const now = new Date().toISOString();
 
-  // 7. Transition Case to RECOVERED
-  const { error: caseUpdateError } = await db
+  // 7. Transition Case to RECOVERED (Atomic Conditional Update)
+  let updateQuery: any = db
     .from("recovery_cases")
     .update({
       recovery_status: "RECOVERED",
@@ -589,8 +624,31 @@ export async function processRecoveryPaymentWebhook(
     })
     .eq("id", recoveryCase.id);
 
+  if (typeof updateQuery.neq === "function") {
+    updateQuery = updateQuery.neq("recovery_status", "RECOVERED");
+  }
+
+  const { data: updatedCaseRows, error: caseUpdateError } = await updateQuery;
+
   if (caseUpdateError) {
     console.error("Pahadi AI Webhook: Error updating recovery_cases status to RECOVERED:", caseUpdateError);
+  }
+
+  // If conditional update modified 0 rows, another concurrent request settled this case
+  if (Array.isArray(updatedCaseRows) && updatedCaseRows.length === 0) {
+    console.log(`Pahadi AI Webhook: Case ${recoveryCase.case_id} was already transitioned concurrently. Idempotent return.`);
+    return {
+      success: true,
+      statusCode: 200,
+      recoveryProcessed: false,
+      isDuplicate: true,
+      caseId: recoveryCase.case_id,
+      orderId: recoveryCase.order_id,
+      recoveredAmount: Number(recoveryCase.amount),
+      currency: recoveryCase.currency,
+      status: "RECOVERED",
+      message: "Recovery case already processed as RECOVERED"
+    };
   }
 
   // 8. Record PAYMENT_RECOVERED in agent_actions
@@ -670,6 +728,17 @@ export async function processRecoveryPaymentWebhook(
       cartItems: recoveryCase.cart_items,
       rawPayload: { event: event.event, payload: event.payload }
     }).catch((err) => console.warn("Pahadi AI webhook revenue event record warning:", err));
+
+    if (event.id) {
+      recordRevenueEvent({
+        eventId: `rzp_evt_dedup_${event.id}`,
+        eventType: "PAYMENT_SUCCESS",
+        orderId: recoveryCase.order_id,
+        amount: Number(recoveryCase.amount),
+        currency: recoveryCase.currency || "INR",
+        rawPayload: { webhookEventId: event.id, source: "webhook_dedup" }
+      }).catch(() => {});
+    }
   }
 
   // 11. Send WhatsApp Merchant Notification for PAYMENT_RECOVERED (Failure-Isolated)

@@ -207,6 +207,8 @@ export interface CustomerContext {
   totalOrdersCount?: number;
   successfulOrdersCount?: number;
   totalSpent?: number;
+  failureReason?: string | null;
+  errorCode?: string | null;
 }
 
 export interface DecisionEngineInput {

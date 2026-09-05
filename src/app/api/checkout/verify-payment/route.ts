@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import crypto from "crypto";
 import { supabaseAdmin, updateOrderStatusSafe, mapDbOrderToOrder } from "@/lib/supabase";
 import { recordRevenueEvent } from "@/lib/ai/revenue-events";
+import { processRecoveryCase } from "@/lib/ai/agent";
 
 export const dynamic = 'force-dynamic';
 
@@ -73,6 +74,10 @@ export async function POST(request: Request) {
         failureReason: "Payment verification signature mismatch",
         cartItems: order.items,
         rawPayload: { razorpay_order_id, razorpay_payment_id }
+      }).then(() => {
+        processRecoveryCase(internalOrderId).catch((err) =>
+          console.warn("Pahadi AI processRecoveryCase non-blocking notice:", err)
+        );
       }).catch((err) => console.warn("Pahadi AI event record non-blocking warning:", err));
 
       return NextResponse.json({ success: false, error: "Payment verification failed. Invalid signature." }, { status: 400 });

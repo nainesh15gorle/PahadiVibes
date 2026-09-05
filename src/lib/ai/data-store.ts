@@ -143,6 +143,16 @@ export function createFallbackQueryBuilder(
       return builder;
     },
 
+    neq(column: string, value: any) {
+      filters.push((r) => {
+        const recVal = r[column];
+        if (recVal === value) return false;
+        if (value !== undefined && value !== null && String(recVal) === String(value)) return false;
+        return true;
+      });
+      return builder;
+    },
+
     or(filterExpr: string) {
       // Example: "id.eq.val,event_id.eq.val" or "case_id.eq.val,id.eq.val"
       const clauses = filterExpr.split(",").map((s) => s.trim());

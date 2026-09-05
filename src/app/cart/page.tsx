@@ -275,7 +275,22 @@ export default function CartPage() {
 
       const rzp = new (window as any).Razorpay(options);
       rzp.on("payment.failed", function (response: any) {
-        toast(`Payment failed: ${response.error.description}`, "error");
+        toast(`Payment failed: ${response.error?.description || "Transaction failed"}`, "error");
+        // Non-blocking report to Pahadi AI real failure detection pipeline
+        fetch("/api/checkout/payment-failed", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            internalOrderId: orderData.internalOrderId,
+            razorpayOrderId: response.error?.metadata?.order_id || orderData.orderId,
+            razorpayPaymentId: response.error?.metadata?.payment_id,
+            errorCode: response.error?.code,
+            errorDescription: response.error?.description,
+            errorReason: response.error?.reason,
+            errorSource: response.error?.source,
+            errorStep: response.error?.step
+          })
+        }).catch((reportErr) => console.warn("Pahadi AI failure report non-blocking notice:", reportErr));
       });
       rzp.open();
 

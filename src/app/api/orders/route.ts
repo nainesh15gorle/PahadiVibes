@@ -24,7 +24,7 @@ export async function GET(request: Request) {
 
     const mappedOrders = (orders || [])
       .map(mapDbOrderToOrder)
-      .filter((order) => order.paymentStatus !== "Pending");
+      .filter((order: any) => order.paymentStatus !== "Pending");
       
     return NextResponse.json({ success: true, data: mappedOrders });
   } catch (error) {

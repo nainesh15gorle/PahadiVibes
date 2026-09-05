@@ -3,6 +3,7 @@ import crypto from "crypto";
 import { supabaseAdmin, updateOrderStatusSafe, mapDbOrderToOrder } from "@/lib/supabase";
 import { recordRevenueEvent } from "@/lib/ai/revenue-events";
 import { processRecoveryPaymentWebhook } from "@/lib/ai/recovery-executor";
+import { processRecoveryCase } from "@/lib/ai/agent";
 
 export const dynamic = 'force-dynamic';
 
@@ -167,6 +168,10 @@ export async function POST(request: Request) {
           currency: paymentEntity?.currency || "INR",
           failureReason: failureReason,
           rawPayload: { event: event.event, payload: event.payload }
+        }).then(() => {
+          processRecoveryCase(internalOrderId).catch((err) =>
+            console.warn("Pahadi AI webhook processRecoveryCase notice:", err)
+          );
         }).catch((err) => console.warn("Pahadi AI webhook event record warning:", err));
       }
     }

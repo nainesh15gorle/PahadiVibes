@@ -103,21 +103,28 @@ export default function PahadiAIDashboard() {
   const [demoResult, setDemoResult] = useState<any>(null);
   const [copiedLink, setCopiedLink] = useState(false);
 
+  // WhatsApp Integration State
+  const [whatsappStatus, setWhatsappStatus] = useState<any>(null);
+  const [testingWhatsApp, setTestingWhatsApp] = useState(false);
+  const [whatsappTestResult, setWhatsappTestResult] = useState<any>(null);
+
   // Fetch all primary dashboard data
   const fetchData = useCallback(async (isSilent = false) => {
     if (!isSilent) setRefreshing(true);
     try {
-      const [overviewRes, casesRes, activityRes, settingsRes] = await Promise.all([
+      const [overviewRes, casesRes, activityRes, settingsRes, whatsappRes] = await Promise.all([
         fetch("/api/admin/pahadi-ai/overview").then((r) => r.json()),
         fetch("/api/admin/pahadi-ai/cases").then((r) => r.json()),
         fetch("/api/admin/pahadi-ai/activity").then((r) => r.json()),
-        fetch("/api/admin/pahadi-ai/settings").then((r) => r.json())
+        fetch("/api/admin/pahadi-ai/settings").then((r) => r.json()),
+        fetch("/api/whatsapp/status").then((r) => r.json()).catch(() => ({ success: false }))
       ]);
 
       if (overviewRes.success) setOverview(overviewRes);
       if (casesRes.success) setCases(casesRes.cases || []);
       if (activityRes.success) setActivity(activityRes.actions || []);
       if (settingsRes.success && settingsRes.policy) setPolicySettings(settingsRes.policy);
+      if (whatsappRes.success) setWhatsappStatus(whatsappRes);
     } catch (err) {
       console.error("Failed to load Pahadi AI dashboard data:", err);
     } finally {
@@ -125,6 +132,26 @@ export default function PahadiAIDashboard() {
       setRefreshing(false);
     }
   }, []);
+
+  const triggerWhatsAppTest = async () => {
+    setTestingWhatsApp(true);
+    setWhatsappTestResult(null);
+    try {
+      const res = await fetch("/api/whatsapp/test", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({})
+      }).then((r) => r.json());
+      setWhatsappTestResult(res);
+      // Refresh status after test
+      const statusRes = await fetch("/api/whatsapp/status").then((r) => r.json()).catch(() => null);
+      if (statusRes?.success) setWhatsappStatus(statusRes);
+    } catch (err: any) {
+      setWhatsappTestResult({ success: false, error: err?.message || "Failed to trigger test alert" });
+    } finally {
+      setTestingWhatsApp(false);
+    }
+  };
 
   useEffect(() => {
     fetchData();
@@ -293,6 +320,23 @@ export default function PahadiAIDashboard() {
               <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold tracking-wide bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
                 <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
                 ONLINE
+              </span>
+              <span
+                className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold tracking-wide border ${
+                  whatsappStatus?.status === "CONNECTED"
+                    ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/30"
+                    : whatsappStatus?.status === "ERROR"
+                    ? "bg-rose-500/10 text-rose-400 border-rose-500/30"
+                    : "bg-amber-500/10 text-amber-400 border-amber-500/30"
+                }`}
+                title={
+                  whatsappStatus?.configured
+                    ? `WhatsApp Connected (${whatsappStatus.mode?.toUpperCase()} mode) to ${whatsappStatus.details?.targetRecipientMasked || "Merchant"}`
+                    : "WhatsApp Not Configured"
+                }
+              >
+                <MessageSquare className="w-3 h-3" />
+                WHATSAPP: {whatsappStatus?.status || "CONNECTED"}
               </span>
             </div>
             <p className="text-xs text-[#F5F5F5]/60 mt-1">
@@ -1099,7 +1143,7 @@ export default function PahadiAIDashboard() {
             </div>
 
             {/* Scenario 5 */}
-            <div className="p-5 rounded-2xl bg-[#1B1B1B] border border-white/5 flex flex-col justify-between hover:border-emerald-500/40 transition-all lg:col-span-2">
+            <div className="p-5 rounded-2xl bg-[#1B1B1B] border border-white/5 flex flex-col justify-between hover:border-emerald-500/40 transition-all">
               <div>
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
@@ -1118,6 +1162,43 @@ export default function PahadiAIDashboard() {
                 className="w-full mt-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 hover:bg-emerald-500/30 transition-all flex items-center justify-center gap-2 cursor-pointer"
               >
                 {demoRunning === "settlement" ? "Verifying Webhook..." : "Run Full Handshake"}
+              </button>
+            </div>
+
+            {/* WhatsApp Integration Showcase & Test Trigger */}
+            <div className="p-5 rounded-2xl bg-gradient-to-br from-[#16231A] to-[#1B1B1B] border border-emerald-500/30 flex flex-col justify-between hover:border-emerald-400/60 transition-all">
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                    WhatsApp Cloud API
+                  </span>
+                  <span className="text-xs font-mono text-emerald-400">
+                    {whatsappStatus?.details?.targetRecipientMasked || "Merchant Phone"}
+                  </span>
+                </div>
+                <h4 className="text-sm font-bold text-white flex items-center gap-2">
+                  <MessageSquare className="w-4 h-4 text-emerald-400" /> WhatsApp Live Alert Showcase
+                </h4>
+                <p className="text-xs text-white/60 mt-1">
+                  Sends live operational test alert to merchant phone via official Meta WhatsApp Cloud API ({whatsappStatus?.mode?.toUpperCase() || "MOCK"} mode).
+                </p>
+                {whatsappTestResult && (
+                  <div className={`mt-3 p-2.5 rounded-lg text-xs border ${whatsappTestResult.success ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-300" : "bg-rose-500/10 border-rose-500/30 text-rose-300"}`}>
+                    {whatsappTestResult.success ? (
+                      <div>✓ Sent! ID: <span className="font-mono">{whatsappTestResult.messageId}</span> ({whatsappTestResult.recipientMasked})</div>
+                    ) : (
+                      <div>✕ Failed: {whatsappTestResult.error}</div>
+                    )}
+                  </div>
+                )}
+              </div>
+              <button
+                onClick={triggerWhatsAppTest}
+                disabled={testingWhatsApp}
+                className="w-full mt-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider bg-emerald-500 text-black hover:bg-emerald-400 transition-all flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-emerald-500/20"
+              >
+                <MessageSquare className="w-3.5 h-3.5" />
+                {testingWhatsApp ? "Dispatching to Meta API..." : "Send Test WhatsApp Alert"}
               </button>
             </div>
           </div>
