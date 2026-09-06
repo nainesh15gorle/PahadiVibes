@@ -1,9 +1,9 @@
 {
   "revenue_events": [
     {
-      "id": "05b02a85-eafc-4417-923f-34acdd006c43",
-      "created_at": "2026-09-05T14:02:02.954Z",
-      "updated_at": "2026-09-05T14:02:02.956Z",
+      "id": "d24bd362-1b13-4085-86e0-5f98399799f8",
+      "created_at": "2026-09-05T18:25:33.479Z",
+      "updated_at": "2026-09-05T18:25:33.722Z",
       "event_id": "demo-evt-temp-001",
       "event_type": "PAYMENT_FAILED",
       "order_id": "demo-order-temp-001",
@@ -22,14 +22,38 @@
         "is_demo": true,
         "scenario": "temp_failure"
       },
-      "processed_at": "2026-09-05T14:02:02.954Z"
+      "processed_at": "2026-09-05T18:25:33.479Z"
+    },
+    {
+      "id": "ad8e3eff-bbe1-4c8d-a024-cd97b1056a6a",
+      "created_at": "2026-09-05T18:26:35.011Z",
+      "updated_at": "2026-09-05T18:26:35.013Z",
+      "event_id": "demo-evt-repeat-001",
+      "event_type": "PAYMENT_FAILED",
+      "order_id": "demo-order-repeat-001",
+      "razorpay_order_id": "rzp_ord_demoorderrepeat001",
+      "customer_id": "demo-customer-002",
+      "customer_name": "Rahul Verma",
+      "customer_email": "rahul.verma@example.com",
+      "customer_phone": "+919811223344",
+      "amount": 3500,
+      "currency": "INR",
+      "status": "RECORDED",
+      "failure_reason": "Multiple consecutive payment attempts failed at issuing bank",
+      "raw_payload": {
+        "source": "pahadi_ai_demo",
+        "demo": true,
+        "is_demo": true,
+        "scenario": "repeat_failure"
+      },
+      "processed_at": "2026-09-05T18:26:35.011Z"
     }
   ],
   "recovery_cases": [
     {
-      "id": "5c5e446e-e5a9-49a6-ae2b-d69d76985ef8",
-      "created_at": "2026-09-05T14:02:02.954Z",
-      "updated_at": "2026-09-05T14:02:02.960Z",
+      "id": "31bc665a-6bd9-4a55-807e-cbdbcf1da19e",
+      "created_at": "2026-09-05T18:25:33.479Z",
+      "updated_at": "2026-09-05T18:25:33.732Z",
       "case_id": "rcase_demo_temp_001",
       "order_id": "demo-order-temp-001",
       "razorpay_order_id": "rzp_ord_demoordertemp001",
@@ -56,12 +80,52 @@
         "demo": true,
         "is_demo": true,
         "scenario": "temp_failure",
-        "initializationTimestamp": "2026-09-05T14:02:02.954Z",
+        "initializationTimestamp": "2026-09-05T18:25:33.479Z",
         "lastAgentExecution": {
           "action": "RETRY_PAYMENT",
           "status": "INITIATED",
-          "timestamp": "2026-09-05T14:02:02.960Z",
+          "timestamp": "2026-09-05T18:25:33.732Z",
           "expectedRecovery": 4199.16
+        }
+      },
+      "recovered_at": null
+    },
+    {
+      "id": "60056734-59b8-4c5b-8a54-69fb8e25bf8b",
+      "created_at": "2026-09-05T18:26:35.011Z",
+      "updated_at": "2026-09-05T18:26:35.016Z",
+      "case_id": "rcase_demo_repeat_001",
+      "order_id": "demo-order-repeat-001",
+      "razorpay_order_id": "rzp_ord_demoorderrepeat001",
+      "customer_id": "demo-customer-002",
+      "customer_name": "Rahul Verma",
+      "customer_email": "rahul.verma@example.com",
+      "customer_phone": "+919811223344",
+      "amount": 3500,
+      "currency": "INR",
+      "stage": "PAYMENT_FAILED",
+      "recovery_status": "IN_RECOVERY",
+      "failure_reason": "Multiple consecutive payment attempts failed at issuing bank",
+      "last_event_id": "demo-evt-repeat-001",
+      "cart_items": [
+        {
+          "productId": "prod_kumaon_shawl",
+          "productName": "Authentic Kumaoni Woolen Shawl",
+          "quantity": 1,
+          "price": 3500
+        }
+      ],
+      "metadata": {
+        "source": "pahadi_ai_demo",
+        "demo": true,
+        "is_demo": true,
+        "scenario": "repeat_failure",
+        "initializationTimestamp": "2026-09-05T18:26:35.011Z",
+        "lastAgentExecution": {
+          "action": "SEND_REMINDER",
+          "status": "INITIATED",
+          "timestamp": "2026-09-05T18:26:35.016Z",
+          "expectedRecovery": 1225
         }
       },
       "recovered_at": null
@@ -506,6 +570,441 @@
       },
       "reasoning": "Recovery action RETRY_PAYMENT initiated successfully via EMAIL.",
       "executed_at": "2026-09-05T14:02:02.960Z"
+    },
+    {
+      "id": "d9c998f0-2ba8-4019-8d12-fafc44c21141",
+      "created_at": "2026-09-05T18:13:29.656Z",
+      "updated_at": "2026-09-05T18:13:29.656Z",
+      "case_id": "30ea0379-6bfa-4b90-93fc-62c972cee1b1",
+      "action_type": "CASE_ANALYZED",
+      "channel": "SYSTEM",
+      "status": "RECORDED",
+      "action_payload": {
+        "orderId": "demo-order-temp-001",
+        "amount": 4999,
+        "customerEmail": "test.customer@pahadivibes.com",
+        "customerSuccessfulOrders": 3,
+        "retryCount": 0
+      },
+      "reasoning": "Pahadi AI analyzing recovery case rcase_demo_temp_001 (Order: demo-order-temp-001, Amount: ₹4999).",
+      "executed_at": "2026-09-05T18:13:29.656Z"
+    },
+    {
+      "id": "b88b3acb-026c-4fc2-8dc8-55b4f4e0c3f4",
+      "created_at": "2026-09-05T18:13:29.657Z",
+      "updated_at": "2026-09-05T18:13:29.657Z",
+      "case_id": "30ea0379-6bfa-4b90-93fc-62c972cee1b1",
+      "action_type": "DIAGNOSIS_COMPLETED",
+      "channel": "SYSTEM",
+      "status": "RECORDED",
+      "action_payload": {
+        "diagnosis": {
+          "category": "TEMPORARY_PAYMENT_FAILURE",
+          "confidence": 0.91,
+          "reason": "Customer has previous successful purchases and the payment failure appears temporary.",
+          "isRecoverable": true,
+          "suggestedPath": "RETRY_PAYMENT"
+        }
+      },
+      "reasoning": "Diagnosis category: TEMPORARY_PAYMENT_FAILURE (Confidence: 91%). Customer has previous successful purchases and the payment failure appears temporary.",
+      "executed_at": "2026-09-05T18:13:29.657Z"
+    },
+    {
+      "id": "aa1a09d4-eead-4e29-b706-dcf87f92b332",
+      "created_at": "2026-09-05T18:13:29.657Z",
+      "updated_at": "2026-09-05T18:13:29.657Z",
+      "case_id": "30ea0379-6bfa-4b90-93fc-62c972cee1b1",
+      "action_type": "RECOVERY_SCORE_CALCULATED",
+      "channel": "SYSTEM",
+      "status": "RECORDED",
+      "action_payload": {
+        "recoveryProbability": 0.84,
+        "expectedRecovery": 4199.16,
+        "factors": [
+          {
+            "factor": "Failure Type",
+            "impact": "POSITIVE",
+            "weight": 0.75,
+            "description": "Temporary payment failure is highly recoverable with a seamless retry."
+          },
+          {
+            "factor": "Customer Loyalty History",
+            "impact": "POSITIVE",
+            "weight": 0.09,
+            "description": "Customer has 3 prior successful purchase(s), increasing recovery confidence (+9%)."
+          }
+        ]
+      },
+      "reasoning": "Estimated 84% recovery probability for ₹4,999 order. Expected revenue recovery: ₹4,199.16.",
+      "executed_at": "2026-09-05T18:13:29.657Z"
+    },
+    {
+      "id": "afffa52f-69e5-4ad8-90f1-663387c87668",
+      "created_at": "2026-09-05T18:13:29.657Z",
+      "updated_at": "2026-09-05T18:13:29.657Z",
+      "case_id": "30ea0379-6bfa-4b90-93fc-62c972cee1b1",
+      "action_type": "RECOVERY_ACTION_SELECTED",
+      "channel": "SYSTEM",
+      "status": "RECORDED",
+      "action_payload": {
+        "decision": {
+          "action": "RETRY_PAYMENT",
+          "priority": "HIGH",
+          "expectedRecovery": 4199.16,
+          "reason": "High recovery probability combined with temporary payment failure and strong customer history.",
+          "suggestedChannel": "SYSTEM"
+        }
+      },
+      "reasoning": "Selected action RETRY_PAYMENT [Priority: HIGH]. High recovery probability combined with temporary payment failure and strong customer history.",
+      "executed_at": "2026-09-05T18:13:29.657Z"
+    },
+    {
+      "id": "bc6b5340-cf92-4f71-b5cb-8db20a81c484",
+      "created_at": "2026-09-05T18:13:29.658Z",
+      "updated_at": "2026-09-05T18:13:29.658Z",
+      "case_id": "30ea0379-6bfa-4b90-93fc-62c972cee1b1",
+      "action_type": "POLICY_APPROVED",
+      "channel": "SYSTEM",
+      "status": "RECORDED",
+      "action_payload": {
+        "approvedAction": "RETRY_PAYMENT",
+        "policyConfig": {
+          "automaticRecoveryEnabled": true,
+          "maxRetryAttempts": 2,
+          "maxAutomaticRecoveryAmount": 10000,
+          "minRecoveryProbabilityThreshold": 0.1
+        }
+      },
+      "reasoning": "Policy approval granted: All recovery policies satisfied.",
+      "executed_at": "2026-09-05T18:13:29.658Z"
+    },
+    {
+      "id": "7ef19815-893f-4c08-ba45-f74376e40b4e",
+      "created_at": "2026-09-05T18:13:29.658Z",
+      "updated_at": "2026-09-05T18:13:29.658Z",
+      "case_id": "30ea0379-6bfa-4b90-93fc-62c972cee1b1",
+      "action_type": "RECOVERY_INITIATED",
+      "channel": "EMAIL",
+      "status": "EXECUTED",
+      "action_payload": {
+        "action": "RETRY_PAYMENT",
+        "executionDetails": {
+          "workflow": "PAYMENT_RETRY_INITIATED",
+          "paymentLinkId": "plink_test_demoordertemp001",
+          "paymentLinkUrl": "https://rzp.io/i/test_demoordertemp001",
+          "retrySession": {
+            "orderId": "demo-order-temp-001",
+            "razorpayOrderId": "rzp_ord_demoordertemp001",
+            "paymentLinkId": "plink_test_demoordertemp001",
+            "paymentLinkUrl": "https://rzp.io/i/test_demoordertemp001",
+            "amountPaise": 499900,
+            "currency": "INR",
+            "customerEmail": "test.customer@pahadivibes.com",
+            "customerPhone": "+919876543210",
+            "retryUrl": "https://rzp.io/i/test_demoordertemp001",
+            "initiatedAt": "2026-09-05T18:13:29.658Z"
+          },
+          "message": "Initiated Razorpay Payment Link recovery (plink_test_demoordertemp001) for order demo-order-temp-001."
+        }
+      },
+      "reasoning": "Recovery action RETRY_PAYMENT initiated successfully via EMAIL.",
+      "executed_at": "2026-09-05T18:13:29.658Z"
+    },
+    {
+      "id": "2cc74298-f6d2-4e06-8321-5530b25dc611",
+      "created_at": "2026-09-05T18:25:33.725Z",
+      "updated_at": "2026-09-05T18:25:33.725Z",
+      "case_id": "31bc665a-6bd9-4a55-807e-cbdbcf1da19e",
+      "action_type": "CASE_ANALYZED",
+      "channel": "SYSTEM",
+      "status": "RECORDED",
+      "action_payload": {
+        "orderId": "demo-order-temp-001",
+        "amount": 4999,
+        "customerEmail": "test.customer@pahadivibes.com",
+        "customerSuccessfulOrders": 3,
+        "retryCount": 0
+      },
+      "reasoning": "Pahadi AI analyzing recovery case rcase_demo_temp_001 (Order: demo-order-temp-001, Amount: ₹4999).",
+      "executed_at": "2026-09-05T18:25:33.725Z"
+    },
+    {
+      "id": "9b7c8c84-abae-4f7a-8d94-7c71e5f3f00e",
+      "created_at": "2026-09-05T18:25:33.727Z",
+      "updated_at": "2026-09-05T18:25:33.727Z",
+      "case_id": "31bc665a-6bd9-4a55-807e-cbdbcf1da19e",
+      "action_type": "DIAGNOSIS_COMPLETED",
+      "channel": "SYSTEM",
+      "status": "RECORDED",
+      "action_payload": {
+        "diagnosis": {
+          "category": "TEMPORARY_PAYMENT_FAILURE",
+          "confidence": 0.91,
+          "reason": "Customer has previous successful purchases and the payment failure appears temporary.",
+          "isRecoverable": true,
+          "suggestedPath": "RETRY_PAYMENT"
+        }
+      },
+      "reasoning": "Diagnosis category: TEMPORARY_PAYMENT_FAILURE (Confidence: 91%). Customer has previous successful purchases and the payment failure appears temporary.",
+      "executed_at": "2026-09-05T18:25:33.727Z"
+    },
+    {
+      "id": "8d6d9911-a042-4220-843b-bcf8c32ec5f2",
+      "created_at": "2026-09-05T18:25:33.728Z",
+      "updated_at": "2026-09-05T18:25:33.728Z",
+      "case_id": "31bc665a-6bd9-4a55-807e-cbdbcf1da19e",
+      "action_type": "RECOVERY_SCORE_CALCULATED",
+      "channel": "SYSTEM",
+      "status": "RECORDED",
+      "action_payload": {
+        "recoveryProbability": 0.84,
+        "expectedRecovery": 4199.16,
+        "factors": [
+          {
+            "factor": "Failure Type",
+            "impact": "POSITIVE",
+            "weight": 0.75,
+            "description": "Temporary payment failure is highly recoverable with a seamless retry."
+          },
+          {
+            "factor": "Customer Loyalty History",
+            "impact": "POSITIVE",
+            "weight": 0.09,
+            "description": "Customer has 3 prior successful purchase(s), increasing recovery confidence (+9%)."
+          }
+        ]
+      },
+      "reasoning": "Estimated 84% recovery probability for ₹4,999 order. Expected revenue recovery: ₹4,199.16.",
+      "executed_at": "2026-09-05T18:25:33.728Z"
+    },
+    {
+      "id": "2bac6cd9-57ff-4c39-83bd-e7d9559b0006",
+      "created_at": "2026-09-05T18:25:33.729Z",
+      "updated_at": "2026-09-05T18:25:33.729Z",
+      "case_id": "31bc665a-6bd9-4a55-807e-cbdbcf1da19e",
+      "action_type": "RECOVERY_ACTION_SELECTED",
+      "channel": "SYSTEM",
+      "status": "RECORDED",
+      "action_payload": {
+        "decision": {
+          "action": "RETRY_PAYMENT",
+          "priority": "HIGH",
+          "expectedRecovery": 4199.16,
+          "reason": "High recovery probability combined with temporary payment failure and strong customer history.",
+          "suggestedChannel": "SYSTEM"
+        }
+      },
+      "reasoning": "Selected action RETRY_PAYMENT [Priority: HIGH]. High recovery probability combined with temporary payment failure and strong customer history.",
+      "executed_at": "2026-09-05T18:25:33.729Z"
+    },
+    {
+      "id": "793cb780-b294-4845-ac20-53c17dfb31bd",
+      "created_at": "2026-09-05T18:25:33.729Z",
+      "updated_at": "2026-09-05T18:25:33.729Z",
+      "case_id": "31bc665a-6bd9-4a55-807e-cbdbcf1da19e",
+      "action_type": "POLICY_APPROVED",
+      "channel": "SYSTEM",
+      "status": "RECORDED",
+      "action_payload": {
+        "approvedAction": "RETRY_PAYMENT",
+        "policyConfig": {
+          "automaticRecoveryEnabled": true,
+          "maxRetryAttempts": 2,
+          "maxAutomaticRecoveryAmount": 10000,
+          "minRecoveryProbabilityThreshold": 0.1
+        }
+      },
+      "reasoning": "Policy approval granted: All recovery policies satisfied.",
+      "executed_at": "2026-09-05T18:25:33.729Z"
+    },
+    {
+      "id": "794efbe5-3fea-44ce-b954-9294347323c1",
+      "created_at": "2026-09-05T18:25:33.731Z",
+      "updated_at": "2026-09-05T18:25:33.731Z",
+      "case_id": "31bc665a-6bd9-4a55-807e-cbdbcf1da19e",
+      "action_type": "RECOVERY_INITIATED",
+      "channel": "EMAIL",
+      "status": "EXECUTED",
+      "action_payload": {
+        "action": "RETRY_PAYMENT",
+        "executionDetails": {
+          "workflow": "PAYMENT_RETRY_INITIATED",
+          "paymentLinkId": "plink_test_demoordertemp001",
+          "paymentLinkUrl": "https://rzp.io/i/test_demoordertemp001",
+          "retrySession": {
+            "orderId": "demo-order-temp-001",
+            "razorpayOrderId": "rzp_ord_demoordertemp001",
+            "paymentLinkId": "plink_test_demoordertemp001",
+            "paymentLinkUrl": "https://rzp.io/i/test_demoordertemp001",
+            "amountPaise": 499900,
+            "currency": "INR",
+            "customerEmail": "test.customer@pahadivibes.com",
+            "customerPhone": "+919876543210",
+            "retryUrl": "https://rzp.io/i/test_demoordertemp001",
+            "initiatedAt": "2026-09-05T18:25:33.730Z"
+          },
+          "message": "Initiated Razorpay Payment Link recovery (plink_test_demoordertemp001) for order demo-order-temp-001."
+        }
+      },
+      "reasoning": "Recovery action RETRY_PAYMENT initiated successfully via EMAIL.",
+      "executed_at": "2026-09-05T18:25:33.731Z"
+    },
+    {
+      "id": "533c06a0-7bc0-4c2f-9d62-ed8570e902b9",
+      "created_at": "2026-09-05T18:26:35.014Z",
+      "updated_at": "2026-09-05T18:26:35.014Z",
+      "case_id": "60056734-59b8-4c5b-8a54-69fb8e25bf8b",
+      "action_type": "CASE_ANALYZED",
+      "channel": "SYSTEM",
+      "status": "RECORDED",
+      "action_payload": {
+        "orderId": "demo-order-repeat-001",
+        "amount": 3500,
+        "customerEmail": "rahul.verma@example.com",
+        "customerSuccessfulOrders": 0,
+        "retryCount": 0
+      },
+      "reasoning": "Pahadi AI analyzing recovery case rcase_demo_repeat_001 (Order: demo-order-repeat-001, Amount: ₹3500).",
+      "executed_at": "2026-09-05T18:26:35.014Z"
+    },
+    {
+      "id": "dd60259e-afe0-4769-ac6a-1f187d7b1d36",
+      "created_at": "2026-09-05T18:26:35.014Z",
+      "updated_at": "2026-09-05T18:26:35.014Z",
+      "case_id": "60056734-59b8-4c5b-8a54-69fb8e25bf8b",
+      "action_type": "DIAGNOSIS_COMPLETED",
+      "channel": "SYSTEM",
+      "status": "RECORDED",
+      "action_payload": {
+        "diagnosis": {
+          "category": "REPEATED_PAYMENT_FAILURE",
+          "confidence": 0.88,
+          "reason": "Customer experienced multiple consecutive payment failures (0 previous attempts recorded).",
+          "isRecoverable": true,
+          "suggestedPath": "SEND_REMINDER_WITH_ASSISTANCE"
+        }
+      },
+      "reasoning": "Diagnosis category: REPEATED_PAYMENT_FAILURE (Confidence: 88%). Customer experienced multiple consecutive payment failures (0 previous attempts recorded).",
+      "executed_at": "2026-09-05T18:26:35.014Z"
+    },
+    {
+      "id": "7a3a22b8-3da1-4a60-85ca-d6674910f759",
+      "created_at": "2026-09-05T18:26:35.014Z",
+      "updated_at": "2026-09-05T18:26:35.014Z",
+      "case_id": "60056734-59b8-4c5b-8a54-69fb8e25bf8b",
+      "action_type": "RECOVERY_SCORE_CALCULATED",
+      "channel": "SYSTEM",
+      "status": "RECORDED",
+      "action_payload": {
+        "recoveryProbability": 0.35,
+        "expectedRecovery": 1225,
+        "factors": [
+          {
+            "factor": "Failure Type",
+            "impact": "NEGATIVE",
+            "weight": 0.35,
+            "description": "Multiple failed attempts reduce probability of immediate recovery."
+          },
+          {
+            "factor": "Customer Loyalty History",
+            "impact": "NEUTRAL",
+            "weight": 0,
+            "description": "First-time customer with no prior purchase baseline."
+          }
+        ]
+      },
+      "reasoning": "Estimated 35% recovery probability for ₹3,500 order. Expected revenue recovery: ₹1,225.",
+      "executed_at": "2026-09-05T18:26:35.014Z"
+    },
+    {
+      "id": "c7fde27d-d6f4-4597-bf63-cae78cd3d387",
+      "created_at": "2026-09-05T18:26:35.015Z",
+      "updated_at": "2026-09-05T18:26:35.015Z",
+      "case_id": "60056734-59b8-4c5b-8a54-69fb8e25bf8b",
+      "action_type": "RECOVERY_ACTION_SELECTED",
+      "channel": "EMAIL",
+      "status": "RECORDED",
+      "action_payload": {
+        "decision": {
+          "action": "SEND_REMINDER",
+          "priority": "MEDIUM",
+          "expectedRecovery": 1225,
+          "reason": "Customer drop-off or moderate recovery probability diagnosed. Recovery reminder recommended.",
+          "suggestedChannel": "EMAIL"
+        }
+      },
+      "reasoning": "Selected action SEND_REMINDER [Priority: MEDIUM]. Customer drop-off or moderate recovery probability diagnosed. Recovery reminder recommended.",
+      "executed_at": "2026-09-05T18:26:35.015Z"
+    },
+    {
+      "id": "b3aafaf9-bd4f-432f-9905-5749ed7248a8",
+      "created_at": "2026-09-05T18:26:35.015Z",
+      "updated_at": "2026-09-05T18:26:35.015Z",
+      "case_id": "60056734-59b8-4c5b-8a54-69fb8e25bf8b",
+      "action_type": "POLICY_APPROVED",
+      "channel": "SYSTEM",
+      "status": "RECORDED",
+      "action_payload": {
+        "approvedAction": "SEND_REMINDER",
+        "policyConfig": {
+          "automaticRecoveryEnabled": true,
+          "maxRetryAttempts": 2,
+          "maxAutomaticRecoveryAmount": 10000,
+          "minRecoveryProbabilityThreshold": 0.1
+        }
+      },
+      "reasoning": "Policy approval granted: All recovery policies satisfied.",
+      "executed_at": "2026-09-05T18:26:35.015Z"
+    },
+    {
+      "id": "b3d378e9-b09f-46bb-8db8-463ca25661b2",
+      "created_at": "2026-09-05T18:26:35.016Z",
+      "updated_at": "2026-09-05T18:26:35.016Z",
+      "case_id": "60056734-59b8-4c5b-8a54-69fb8e25bf8b",
+      "action_type": "RECOVERY_INITIATED",
+      "channel": "EMAIL",
+      "status": "EXECUTED",
+      "action_payload": {
+        "action": "SEND_REMINDER",
+        "executionDetails": {
+          "workflow": "REMINDER_QUEUED",
+          "reminderPayload": {
+            "orderId": "demo-order-repeat-001",
+            "customerName": "Rahul Verma",
+            "recipient": "rahul.verma@example.com",
+            "amount": 3500,
+            "currency": "INR",
+            "cartItemsCount": 1,
+            "paymentLink": "/cart?resumeOrderId=demo-order-repeat-001",
+            "scheduledAt": "2026-09-05T18:26:35.016Z"
+          },
+          "message": "Recovery reminder scheduled for rahul.verma@example.com via EMAIL."
+        }
+      },
+      "reasoning": "Recovery action SEND_REMINDER initiated successfully via EMAIL.",
+      "executed_at": "2026-09-05T18:26:35.016Z"
+    },
+    {
+      "id": "7cee3799-a4b2-4c11-b267-9e7bdc20a43c",
+      "created_at": "2026-09-05T18:26:35.016Z",
+      "updated_at": "2026-09-05T18:26:35.018Z",
+      "case_id": "60056734-59b8-4c5b-8a54-69fb8e25bf8b",
+      "action_type": "WHATSAPP_NOTIFICATION_SENT",
+      "channel": "WHATSAPP",
+      "status": "EXECUTED",
+      "action_payload": {
+        "notificationType": "RECOVERY_INITIATED",
+        "caseId": "rcase_demo_repeat_001",
+        "orderId": "demo-order-repeat-001",
+        "recipient": "+919876543210",
+        "provider": "mock",
+        "mode": "mock",
+        "messageId": "wamid_mock_1788632795018_ifwmwkp",
+        "error": null,
+        "errorCategory": null
+      },
+      "reasoning": "WhatsApp RECOVERY_INITIATED merchant notification sent via mock (mock).",
+      "executed_at": "2026-09-05T18:26:35.016Z"
     }
   ]
 }
