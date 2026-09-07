@@ -6,8 +6,6 @@ A premium full-stack e-commerce platform built to showcase and sell authentic ha
 
 # ✨ Features
 
-### Customer Experience
-
 * Premium luxury-inspired UI/UX
 * Browse Mandala Wall Art & Aipan Art collections
 * Advanced product search
