@@ -3,10 +3,16 @@ import { supabaseAdmin } from "@/lib/supabase";
 import { diagnoseRevenueEvent } from "@/lib/ai/diagnosis";
 import { calculateRecoveryScore } from "@/lib/ai/recovery-score";
 import { selectRecoveryAction } from "@/lib/ai/decision-engine";
+import { checkAdminAuth } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
+  const auth = await checkAdminAuth();
+  if (!auth.isAuthorized) {
+    return NextResponse.json({ success: false, error: auth.error || "Unauthorized" }, { status: auth.status || 401 });
+  }
+
   try {
     const { searchParams } = new URL(request.url);
     const query = (searchParams.get("q") || "").toLowerCase().trim();

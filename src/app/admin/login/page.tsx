@@ -23,32 +23,39 @@ export default function AdminLoginPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // Hardcoded bypass for specific admin credentials
-    if (emailAddress.trim().toLowerCase() === "bhumikafalia@gmail.com" && password.trim() === "Anu@04feb") {
-      document.cookie = "admin_bypass=true; path=/";
-      router.push("/admin/dashboard");
-      return;
-    }
-    
     setIsLoading(true);
     setError("");
 
     try {
-      const userEmail = emailAddress.toLowerCase().trim();
-      const adminEmail = (process.env.NEXT_PUBLIC_ADMIN_EMAIL || "admin@example.com").toLowerCase().trim();
+      const cleanEmail = emailAddress.trim().toLowerCase();
+      const res = await fetch("/api/admin/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: cleanEmail,
+          password: password.trim(),
+        }),
+      });
 
-      if (userEmail !== adminEmail) {
-        setError("Access Denied: You do not have administrator permissions.");
+      const data = await res.json();
+
+      if (!res.ok || !data.success) {
+        setError(data.error || "Failed to sign in. Please verify your credentials.");
         setIsLoading(false);
         return;
       }
 
-      await signIn({ email: userEmail, password });
+      // Sync client auth state if available
+      try {
+        await signIn({ email: cleanEmail, password: password.trim() });
+      } catch {
+        // Server session is already authenticated via secure HttpOnly cookie
+      }
+
       router.push("/admin/dashboard");
     } catch (err: any) {
       console.error("Admin sign in error:", err);
-      setError(err.message || "Failed to sign in. Please verify your credentials.");
+      setError("Network or server error during sign in. Please try again.");
     } finally {
       setIsLoading(false);
     }

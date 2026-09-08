@@ -1,10 +1,16 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase";
 import { getActiveRecoveryPolicy } from "@/lib/ai/policy-engine";
+import { checkAdminAuth } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
+  const auth = await checkAdminAuth();
+  if (!auth.isAuthorized) {
+    return NextResponse.json({ success: false, error: auth.error || "Unauthorized" }, { status: auth.status || 401 });
+  }
+
   try {
     // 1. Query recovery_cases
     const { data: casesData, error: casesError } = await supabaseAdmin

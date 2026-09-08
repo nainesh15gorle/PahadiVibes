@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { supabaseAdmin, mapDbProductToProduct, mapProductToDbProduct } from "@/lib/supabase";
 import { ProductSchema } from "@/lib/zod/schemas";
 import { checkAdminAuth } from "@/lib/auth";
+import { logger } from "@/lib/logger";
 import { z } from "zod";
 
 export const dynamic = 'force-dynamic';
@@ -12,14 +13,22 @@ export async function GET(request: Request) {
     const category = searchParams.get("category");
     const featured = searchParams.get("featured");
     const sort = searchParams.get("sort");
-    const limit = parseInt(searchParams.get("limit") || "50");
-    
+    const limit = Math.min(100, Math.max(1, parseInt(searchParams.get("limit") || "50", 10)));
+
+    const authResult = await checkAdminAuth();
+    const isAdmin = authResult.isAuthorized;
+
     let query = supabaseAdmin.from("products").select("*");
+
+    // Enforce that non-admin public users can ONLY see active products
+    if (!isAdmin) {
+      query = query.eq("status", "Active");
+    }
 
     if (category) {
       query = query.eq("category", category);
     }
-    
+
     if (featured === "true") {
       query = query.eq("featured", true);
     }
@@ -36,15 +45,15 @@ export async function GET(request: Request) {
 
     const { data: products, error } = await query;
     if (error) {
-      throw error;
+      logger.error("GET /api/products query error", error);
+      return NextResponse.json({ success: false, error: "Failed to fetch products" }, { status: 500 });
     }
 
     const mappedProducts = (products || []).map(mapDbProductToProduct);
     return NextResponse.json({ success: true, data: mappedProducts });
   } catch (error) {
-    console.error("GET /api/products error:", error);
-    const errorMessage = error && typeof error === "object" && "message" in error ? (error as any).message : String(error);
-    return NextResponse.json({ success: false, error: errorMessage }, { status: 500 });
+    logger.error("GET /api/products error", error);
+    return NextResponse.json({ success: false, error: "Failed to fetch products" }, { status: 500 });
   }
 }
 
@@ -52,7 +61,7 @@ export async function POST(request: Request) {
   try {
     const authResult = await checkAdminAuth();
     if (!authResult.isAuthorized) {
-      return NextResponse.json({ success: false, error: authResult.error }, { status: authResult.status });
+      return NextResponse.json({ success: false, error: authResult.error || "Unauthorized" }, { status: authResult.status || 401 });
     }
 
     const body = await request.json();
@@ -71,16 +80,16 @@ export async function POST(request: Request) {
       .insert(dbProduct);
 
     if (error) {
-      throw error;
+      logger.error("Product insert error", error);
+      return NextResponse.json({ success: false, error: "Failed to create product" }, { status: 500 });
     }
 
     return NextResponse.json({ success: true, data: newProduct }, { status: 201 });
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return NextResponse.json({ success: false, error: error.issues }, { status: 400 });
+      return NextResponse.json({ success: false, error: error.issues.map((i) => i.message) }, { status: 400 });
     }
-    console.error("POST /api/products error:", error);
-    const errorMessage = error && typeof error === "object" && "message" in error ? (error as any).message : String(error);
-    return NextResponse.json({ success: false, error: errorMessage }, { status: 500 });
+    logger.error("POST /api/products error", error);
+    return NextResponse.json({ success: false, error: "Internal server error" }, { status: 500 });
   }
 }

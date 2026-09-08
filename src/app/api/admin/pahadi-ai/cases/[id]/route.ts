@@ -5,6 +5,7 @@ import { diagnoseRevenueEvent } from "@/lib/ai/diagnosis";
 import { calculateRecoveryScore } from "@/lib/ai/recovery-score";
 import { selectRecoveryAction } from "@/lib/ai/decision-engine";
 import { evaluatePolicy } from "@/lib/ai/policy-engine";
+import { checkAdminAuth } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
@@ -12,6 +13,11 @@ export async function GET(
   request: Request,
   props: { params: Promise<{ id: string }> }
 ) {
+  const auth = await checkAdminAuth();
+  if (!auth.isAuthorized) {
+    return NextResponse.json({ success: false, error: auth.error || "Unauthorized" }, { status: auth.status || 401 });
+  }
+
   try {
     const { id } = await props.params;
 
@@ -19,11 +25,13 @@ export async function GET(
       return NextResponse.json({ success: false, error: "Missing case ID" }, { status: 400 });
     }
 
+    const cleanId = id.replace(/[^a-zA-Z0-9_-]/g, "");
+
     // 1. Fetch Recovery Case
     const { data: caseData, error: caseError } = await supabaseAdmin
       .from("recovery_cases")
       .select("*")
-      .or(`id.eq.${id},case_id.eq.${id},order_id.eq.${id}`)
+      .or(`id.eq.${cleanId},case_id.eq.${cleanId},order_id.eq.${cleanId}`)
       .maybeSingle();
 
     if (caseError || !caseData) {
@@ -44,15 +52,19 @@ export async function GET(
       .eq("case_id", caseData.id)
       .order("created_at", { ascending: false });
 
-    // 4. Calculate explainability & AI Analysis
-    const latestEvent = eventsData && eventsData.length > 0 ? eventsData[0] : null;
+    // 4. Generate on-the-fly diagnosis and policy evaluation
+    const latestEvent = eventsData?.[0] || {
+      id: caseData.last_event_id,
+      event_id: caseData.last_event_id,
+      event_type: caseData.stage === "PAYMENT_FAILED" ? "PAYMENT_FAILED" : "MODAL_DISMISSED",
+      order_id: caseData.order_id,
+      customer_email: caseData.customer_email,
+      customer_phone: caseData.customer_phone,
+      amount: caseData.amount,
+      raw_payload: {}
+    };
 
-    const diagnosis = diagnoseRevenueEvent(latestEvent, {
-      customerSuccessfulOrdersCount: 1,
-      previousAttemptsCount: (actionsData || []).filter(
-        (a) => a.action_type === "RECOVERY_INITIATED"
-      ).length
-    });
+    const diagnosis = diagnoseRevenueEvent(latestEvent);
 
     const score = calculateRecoveryScore({
       amount: Number(caseData.amount) || 0,
@@ -106,6 +118,11 @@ export async function POST(
   request: Request,
   props: { params: Promise<{ id: string }> }
 ) {
+  const auth = await checkAdminAuth();
+  if (!auth.isAuthorized) {
+    return NextResponse.json({ success: false, error: auth.error || "Unauthorized" }, { status: auth.status || 401 });
+  }
+
   try {
     const { id } = await props.params;
 
@@ -113,7 +130,8 @@ export async function POST(
       return NextResponse.json({ success: false, error: "Missing case ID" }, { status: 400 });
     }
 
-    const agentResult = await processRecoveryCase(id);
+    const cleanId = id.replace(/[^a-zA-Z0-9_-]/g, "");
+    const agentResult = await processRecoveryCase(cleanId);
 
     return NextResponse.json({
       success: true,

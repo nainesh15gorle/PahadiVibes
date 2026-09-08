@@ -3,6 +3,10 @@ import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase";
 import { checkAdminAuth } from "@/lib/auth";
 import { recordRevenueEvent } from "@/lib/ai/revenue-events";
+import { RevenueEventType } from "@/lib/ai/types";
+import { AiEventSchema } from "@/lib/zod/schemas";
+import { checkRateLimit, getClientIp, RateLimitPresets } from "@/lib/rate-limit";
+import { logger } from "@/lib/logger";
 
 export const dynamic = "force-dynamic";
 
@@ -32,13 +36,14 @@ export async function GET(request: Request) {
       .limit(limit);
 
     if (status) {
-      eventsQuery = eventsQuery.eq("event_type", status);
+      const cleanStatus = status.replace(/[^a-zA-Z0-9_-]/g, "");
+      eventsQuery = eventsQuery.eq("event_type", cleanStatus);
     }
 
     const { data: events, error: eventsError } = await eventsQuery;
 
     if (eventsError) {
-      console.warn("Pahadi AI GET /api/ai/events query notice:", eventsError.message);
+      logger.warn("Pahadi AI GET /api/ai/events query notice", { err: eventsError.message });
     }
 
     // 2. Fetch active recovery cases
@@ -72,14 +77,14 @@ export async function GET(request: Request) {
           totalCasesCount: recoveryCasesList.length,
           openCasesCount,
           recoveredCasesCount: recoveredCases.length,
-          recoveredAmount
-        }
-      }
+          recoveredAmount,
+        },
+      },
     });
   } catch (error: any) {
-    console.error("GET /api/ai/events error:", error);
+    logger.error("GET /api/ai/events error", error);
     return NextResponse.json(
-      { success: false, error: error?.message || "Internal Server Error" },
+      { success: false, error: "Internal Server Error" },
       { status: 500 }
     );
   }
@@ -87,51 +92,63 @@ export async function GET(request: Request) {
 
 /**
  * POST /api/ai/events
- * Ingestion endpoint for revenue events with strict idempotency.
+ * Ingestion endpoint for revenue events with strict idempotency and validation.
  */
 export async function POST(request: Request) {
-  try {
-    const body = await request.json();
+  const ip = getClientIp(request);
+  const rateLimit = checkRateLimit(ip, "ai_events", RateLimitPresets.AI_EVENTS);
+  if (!rateLimit.success) {
+    return NextResponse.json({ success: false, error: "Rate limit exceeded" }, { status: 429 });
+  }
 
-    if (!body || !body.eventType) {
+  try {
+    const rawBody = await request.json();
+    const parsed = AiEventSchema.safeParse(rawBody);
+
+    if (!parsed.success) {
       return NextResponse.json(
-        { success: false, error: "Missing required 'eventType' field" },
+        { success: false, error: "Invalid event format", details: parsed.error.issues.map((i) => i.message) },
         { status: 400 }
       );
     }
 
+    const body = parsed.data;
+
     const result = await recordRevenueEvent({
       eventId: body.eventId,
-      eventType: body.eventType,
-      orderId: body.orderId,
-      razorpayOrderId: body.razorpayOrderId,
-      razorpayPaymentId: body.razorpayPaymentId,
-      customerId: body.customerId,
-      customerName: body.customerName,
-      customerEmail: body.customerEmail,
-      customerPhone: body.customerPhone,
+      eventType: body.eventType as RevenueEventType,
+      orderId: body.orderId || undefined,
+      razorpayOrderId: body.razorpayOrderId || undefined,
+      razorpayPaymentId: body.razorpayPaymentId || undefined,
+      customerId: body.customerId || undefined,
+      customerName: body.customerName || undefined,
+      customerEmail: body.customerEmail || undefined,
+      customerPhone: body.customerPhone || undefined,
       amount: body.amount,
       currency: body.currency,
-      failureReason: body.failureReason,
+      failureReason: body.failureReason || undefined,
       cartItems: body.cartItems,
       rawPayload: body.rawPayload,
-      metadata: body.metadata
+      metadata: body.metadata,
     });
 
-    return NextResponse.json({
-      success: result.success,
-      isDuplicate: result.isDuplicate,
-      data: {
-        event: result.event,
-        recoveryCase: result.recoveryCase,
-        action: result.action
-      },
-      error: result.error
-    }, { status: result.success ? (result.isDuplicate ? 200 : 201) : 500 });
-  } catch (error: any) {
-    console.error("POST /api/ai/events error:", error);
     return NextResponse.json(
-      { success: false, error: error?.message || "Internal Server Error" },
+      {
+        success: result.success,
+        isDuplicate: result.isDuplicate,
+        data: {
+          event: result.event,
+          recoveryCase: result.recoveryCase,
+          action: result.action,
+        },
+        error: result.error,
+      },
+      { status: result.success ? (result.isDuplicate ? 200 : 201) : 500 }
+    );
+  } catch (error: any) {
+    logger.error("POST /api/ai/events error", error);
+    return NextResponse.json(
+      { success: false, error: "Internal Server Error" },
       { status: 500 }
     );
   }

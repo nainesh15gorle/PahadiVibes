@@ -1,13 +1,18 @@
-// src/app/api/admin/pahadi-ai/demo/route.ts
 import { NextResponse } from "next/server";
 import crypto from "crypto";
 import { initializeDemoCase, DEMO_SCENARIOS, DemoScenarioKey } from "@/lib/ai/demo-init";
 import { processRecoveryCase } from "@/lib/ai/agent";
 import { processRecoveryPaymentWebhook } from "@/lib/ai/recovery-executor";
+import { checkAdminAuth } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
+  const auth = await checkAdminAuth();
+  if (!auth.isAuthorized) {
+    return NextResponse.json({ success: false, error: auth.error || "Unauthorized" }, { status: auth.status || 401 });
+  }
+
   try {
     const body = await request.json();
     const scenarioKey = (body.scenario || "temp_failure") as DemoScenarioKey;

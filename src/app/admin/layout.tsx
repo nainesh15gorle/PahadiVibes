@@ -54,7 +54,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   ];
 
   const handleLogout = async () => {
-    // Delete bypass cookie as well just in case
+    try {
+      await fetch("/api/admin/logout", { method: "POST" });
+    } catch {
+      // Continue cleanup
+    }
     document.cookie = "admin_bypass=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
     await signOut();
     router.push("/admin/login");

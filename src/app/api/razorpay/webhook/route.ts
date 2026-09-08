@@ -4,67 +4,91 @@ import { supabaseAdmin, updateOrderStatusSafe, mapDbOrderToOrder } from "@/lib/s
 import { recordRevenueEvent } from "@/lib/ai/revenue-events";
 import { processRecoveryPaymentWebhook } from "@/lib/ai/recovery-executor";
 import { processRecoveryCase } from "@/lib/ai/agent";
+import { checkRateLimit, getClientIp, RateLimitPresets } from "@/lib/rate-limit";
+import { logger } from "@/lib/logger";
 
 export const dynamic = 'force-dynamic';
 
 export async function POST(request: Request) {
+  const ip = getClientIp(request);
+
+  // Rate Limiting on Webhook Endpoint
+  const rateLimit = checkRateLimit(ip, "webhook", RateLimitPresets.WEBHOOK);
+  if (!rateLimit.success) {
+    logger.warn("Rate limit exceeded on razorpay webhook endpoint", { ip });
+    return NextResponse.json({ success: false, error: "Rate limit exceeded" }, { status: 429 });
+  }
+
   try {
     const rawBody = await request.text();
     const signature = request.headers.get("x-razorpay-signature");
 
     if (!signature) {
+      logger.warn("Razorpay webhook received without signature header", { ip });
       return NextResponse.json({ success: false, error: "Missing signature" }, { status: 400 });
     }
 
     const webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET;
     if (!webhookSecret) {
-      console.error("RAZORPAY_WEBHOOK_SECRET is not set.");
+      logger.error("RAZORPAY_WEBHOOK_SECRET is not configured on server");
       return NextResponse.json({ success: false, error: "Webhook secret not configured" }, { status: 500 });
     }
 
-    // Verify webhook signature
+    // Timing-safe webhook signature verification
     const expectedSignature = crypto
       .createHmac("sha256", webhookSecret)
       .update(rawBody)
       .digest("hex");
 
-    if (expectedSignature !== signature) {
-      console.error("Invalid webhook signature.");
+    const sigBuffer = Buffer.from(signature);
+    const expBuffer = Buffer.from(expectedSignature);
+
+    const isSignatureValid =
+      sigBuffer.length === expBuffer.length && crypto.timingSafeEqual(sigBuffer, expBuffer);
+
+    if (!isSignatureValid) {
+      logger.securityAlert("Invalid Razorpay webhook signature attempt", { ip });
       return NextResponse.json({ success: false, error: "Invalid signature" }, { status: 400 });
     }
 
-    const event = JSON.parse(rawBody);
-    console.log(`Razorpay Webhook received event: ${event.event}`);
+    let event: any;
+    try {
+      event = JSON.parse(rawBody);
+    } catch {
+      return NextResponse.json({ success: false, error: "Malformed JSON" }, { status: 400 });
+    }
+
+    logger.info(`Razorpay Webhook received event: ${event.event}`);
 
     // First attempt Pahadi AI recovery case processing
     const recoveryResult = await processRecoveryPaymentWebhook({
       rawBody,
       signature,
       webhookSecret,
-      event
+      event,
     });
 
     if (recoveryResult.recoveryProcessed || recoveryResult.isDuplicate) {
-      console.log(`Webhook: Successfully handled via Pahadi AI Recovery (Case: ${recoveryResult.caseId}).`);
+      logger.info(`Webhook handled via Pahadi AI Recovery (Case: ${recoveryResult.caseId})`);
       return NextResponse.json({
         success: true,
         message: recoveryResult.message || "Recovery webhook processed successfully",
         recoveryProcessed: recoveryResult.recoveryProcessed,
-        caseId: recoveryResult.caseId
+        caseId: recoveryResult.caseId,
       });
     }
 
     // Handle standard checkout events if not handled by recovery workflow
     if (event.event === "order.paid" || event.event === "payment.captured") {
-      const paymentEntity = event.payload.payment?.entity;
-      const orderEntity = event.payload.order?.entity;
-      
+      const paymentEntity = event.payload?.payment?.entity;
+      const orderEntity = event.payload?.order?.entity;
+
       const internalOrderId = paymentEntity?.notes?.internalOrderId || orderEntity?.notes?.internalOrderId;
       const razorpayPaymentId = paymentEntity?.id;
       const razorpayOrderId = paymentEntity?.order_id || orderEntity?.id;
 
       if (!internalOrderId) {
-        console.warn("Webhook ignored: internalOrderId not found in notes.");
+        logger.warn("Webhook ignored: internalOrderId not found in notes");
         return NextResponse.json({ success: true, message: "Ignored: No internal ID" });
       }
 
@@ -76,15 +100,15 @@ export async function POST(request: Request) {
         .maybeSingle();
 
       if (fetchError || !dbOrder) {
-        console.error("Webhook: Order not found for ID:", internalOrderId);
+        logger.warn("Webhook: Order not found for ID", { internalOrderId });
         return NextResponse.json({ success: false, error: "Order not found" }, { status: 404 });
       }
 
       const order = mapDbOrderToOrder(dbOrder);
 
-      // Idempotency: Skip if already paid
+      // Idempotency: Skip if already paid to prevent duplicate stock reduction
       if (order.paymentStatus === "Paid") {
-        console.log(`Webhook: Order ${internalOrderId} is already paid. Skipping.`);
+        logger.info(`Webhook: Order ${internalOrderId} is already paid. Skipping duplicate processing.`);
         return NextResponse.json({ success: true, message: "Already processed" });
       }
 
@@ -93,13 +117,13 @@ export async function POST(request: Request) {
         status: "Processing",
         payment_status: "Paid",
         razorpay_payment_id: razorpayPaymentId,
-        razorpay_order_id: razorpayOrderId
+        razorpay_order_id: razorpayOrderId,
       };
 
       const { error: updateError } = await updateOrderStatusSafe(internalOrderId, updateFields);
 
       if (updateError) {
-        console.error("Webhook: Supabase order update error:", updateError);
+        logger.error("Webhook: Supabase order update error", updateError);
         throw updateError;
       }
 
@@ -114,7 +138,7 @@ export async function POST(request: Request) {
             .maybeSingle();
 
           if (product) {
-            const updatedStock = Math.max(0, Number(product.stock) - item.quantity);
+            const updatedStock = Math.max(0, Number(product.stock) - (Number(item.quantity) || 1));
             await supabaseAdmin
               .from("products")
               .update({ stock: updatedStock })
@@ -136,24 +160,24 @@ export async function POST(request: Request) {
         customerPhone: order.phone,
         amount: order.total,
         cartItems: order.items,
-        rawPayload: { event: event.event, payload: event.payload }
-      }).catch((err) => console.warn("Pahadi AI webhook event record warning:", err));
+        rawPayload: { event: event.event },
+      }).catch((err) => logger.warn("Pahadi AI webhook event record warning", { err: err?.message }));
 
-      console.log(`Webhook: Order ${internalOrderId} successfully marked as Paid.`);
-    } 
-    else if (event.event === "payment.failed") {
-      const paymentEntity = event.payload.payment?.entity;
+      logger.info(`Webhook: Order ${internalOrderId} marked as Paid successfully.`);
+    } else if (event.event === "payment.failed") {
+      const paymentEntity = event.payload?.payment?.entity;
       const internalOrderId = paymentEntity?.notes?.internalOrderId;
-      const failureReason = paymentEntity?.error_description || paymentEntity?.error_reason || "Payment failed at gateway";
+      const failureReason =
+        paymentEntity?.error_description || paymentEntity?.error_reason || "Payment failed at gateway";
 
       if (internalOrderId) {
         const updateFields = {
           status: "Cancelled",
           payment_status: "Failed",
-          razorpay_payment_id: paymentEntity?.id
+          razorpay_payment_id: paymentEntity?.id,
         };
         await updateOrderStatusSafe(internalOrderId, updateFields);
-        console.log(`Webhook: Order ${internalOrderId} marked as Failed.`);
+        logger.info(`Webhook: Order ${internalOrderId} marked as Failed.`);
 
         // Record payment failure revenue event for Pahadi AI
         recordRevenueEvent({
@@ -167,18 +191,20 @@ export async function POST(request: Request) {
           amount: paymentEntity?.amount ? paymentEntity.amount / 100 : 0,
           currency: paymentEntity?.currency || "INR",
           failureReason: failureReason,
-          rawPayload: { event: event.event, payload: event.payload }
-        }).then(() => {
-          processRecoveryCase(internalOrderId).catch((err) =>
-            console.warn("Pahadi AI webhook processRecoveryCase notice:", err)
-          );
-        }).catch((err) => console.warn("Pahadi AI webhook event record warning:", err));
+          rawPayload: { event: event.event },
+        })
+          .then(() => {
+            processRecoveryCase(internalOrderId).catch((err) =>
+              logger.warn("Pahadi AI webhook processRecoveryCase notice", { err: err?.message })
+            );
+          })
+          .catch((err) => logger.warn("Pahadi AI webhook event record warning", { err: err?.message }));
       }
     }
 
     return NextResponse.json({ success: true, message: "Webhook processed successfully" });
   } catch (error: any) {
-    console.error("POST /api/razorpay/webhook error:", error);
+    logger.error("POST /api/razorpay/webhook error", error);
     return NextResponse.json({ success: false, error: "Internal Server Error" }, { status: 500 });
   }
 }
