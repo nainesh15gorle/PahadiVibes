@@ -3,124 +3,203 @@
 -- Description: Enforces strict Row Level Security (RLS) policies across all
 --              tables to safeguard customer PII, order data, products, and
 --              autonomous agent recovery cases.
--- Instructions: Run this script in the Supabase SQL Editor.
+-- Instructions: Copy and run this script in the Supabase SQL Editor.
 -- =============================================================================
 
--- 1. Enable Row Level Security (RLS) on all public tables
-ALTER TABLE IF EXISTS public.users ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS public.addresses ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS public.categories ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS public.products ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS public.orders ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS public.revenue_events ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS public.recovery_cases ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS public.agent_actions ENABLE ROW LEVEL SECURITY;
-
 -- =============================================================================
--- 2. USERS TABLE SECURITY
--- Protect customer PII (names, emails, phones). Users may only see and update
--- their own user record.
+-- 1. ENSURE OPTIONAL AI TABLES EXIST BEFORE ENABLING RLS
 -- =============================================================================
 
--- Drop overly permissive legacy policies
-DROP POLICY IF EXISTS "Allow public read access to users profiles" ON public.users;
-DROP POLICY IF EXISTS "Allow users to read their own profile" ON public.users;
-DROP POLICY IF EXISTS "Allow users to update their own profiles" ON public.users;
-DROP POLICY IF EXISTS "Allow users to insert their own profiles" ON public.users;
+CREATE TABLE IF NOT EXISTS public.revenue_events (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    event_id VARCHAR(255) NOT NULL UNIQUE,
+    event_type VARCHAR(100) NOT NULL,
+    order_id VARCHAR(255),
+    razorpay_order_id VARCHAR(255),
+    razorpay_payment_id VARCHAR(255),
+    customer_id VARCHAR(255),
+    customer_name VARCHAR(255),
+    customer_email VARCHAR(255),
+    customer_phone VARCHAR(50),
+    amount NUMERIC NOT NULL DEFAULT 0,
+    currency VARCHAR(10) NOT NULL DEFAULT 'INR',
+    status VARCHAR(50) NOT NULL DEFAULT 'RECORDED',
+    failure_reason TEXT,
+    raw_payload JSONB DEFAULT '{}'::jsonb,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    processed_at TIMESTAMPTZ
+);
 
--- Users can only SELECT their own record
-CREATE POLICY "Allow users to read their own profile" ON public.users
-    FOR SELECT TO authenticated
-    USING (auth.uid() = id);
+CREATE TABLE IF NOT EXISTS public.recovery_cases (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    case_id VARCHAR(255) NOT NULL UNIQUE,
+    order_id VARCHAR(255) NOT NULL UNIQUE,
+    razorpay_order_id VARCHAR(255),
+    customer_id VARCHAR(255),
+    customer_name VARCHAR(255),
+    customer_email VARCHAR(255),
+    customer_phone VARCHAR(50),
+    amount NUMERIC NOT NULL DEFAULT 0,
+    currency VARCHAR(10) NOT NULL DEFAULT 'INR',
+    stage VARCHAR(50) NOT NULL DEFAULT 'CHECKOUT_INITIATED',
+    recovery_status VARCHAR(50) NOT NULL DEFAULT 'OPEN',
+    failure_reason TEXT,
+    last_event_id VARCHAR(255),
+    cart_items JSONB NOT NULL DEFAULT '[]'::jsonb,
+    metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    recovered_at TIMESTAMPTZ
+);
 
--- Users can only UPDATE their own record
-CREATE POLICY "Allow users to update their own profiles" ON public.users
-    FOR UPDATE TO authenticated
-    USING (auth.uid() = id)
-    WITH CHECK (auth.uid() = id);
-
--- Users can insert their initial profile
-CREATE POLICY "Allow users to insert their own profiles" ON public.users
-    FOR INSERT TO authenticated
-    WITH CHECK (auth.uid() = id);
-
--- =============================================================================
--- 3. ADDRESSES TABLE SECURITY
--- Customers can only manage their own shipping addresses.
--- =============================================================================
-
-DROP POLICY IF EXISTS "Users can manage their own addresses" ON public.addresses;
-DROP POLICY IF EXISTS "Users can view their own addresses" ON public.addresses;
-DROP POLICY IF EXISTS "Users can insert their own addresses" ON public.addresses;
-DROP POLICY IF EXISTS "Users can update their own addresses" ON public.addresses;
-DROP POLICY IF EXISTS "Users can delete their own addresses" ON public.addresses;
-
-CREATE POLICY "Users can manage their own addresses" ON public.addresses
-    FOR ALL TO authenticated
-    USING (auth.uid() = user_id)
-    WITH CHECK (auth.uid() = user_id);
-
--- =============================================================================
--- 4. CATEGORIES TABLE SECURITY
--- Anyone can view categories. Modifications are restricted to server-side admin.
--- =============================================================================
-
-DROP POLICY IF EXISTS "Allow public read access to categories" ON public.categories;
-DROP POLICY IF EXISTS "Allow admin manage access to categories" ON public.categories;
-
--- Public read access
-CREATE POLICY "Allow public read access to categories" ON public.categories
-    FOR SELECT TO public
-    USING (true);
-
--- (Admin writes occur via supabaseAdmin / service-role key which bypasses RLS)
-
--- =============================================================================
--- 5. PRODUCTS TABLE SECURITY
--- Public and regular users can ONLY read active products.
--- Direct client writes/deletes are blocked (admin writes via service role).
--- =============================================================================
-
-DROP POLICY IF EXISTS "Allow public read access to products" ON public.products;
-DROP POLICY IF EXISTS "Allow public read active products" ON public.products;
-DROP POLICY IF EXISTS "Allow admin manage access to products" ON public.products;
-
--- Public users can ONLY read Active products
-CREATE POLICY "Allow public read active products" ON public.products
-    FOR SELECT TO public
-    USING (status = 'Active');
+CREATE TABLE IF NOT EXISTS public.agent_actions (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    case_id UUID REFERENCES public.recovery_cases(id) ON DELETE CASCADE,
+    action_type VARCHAR(100) NOT NULL,
+    channel VARCHAR(50) NOT NULL DEFAULT 'SYSTEM',
+    status VARCHAR(50) NOT NULL DEFAULT 'RECORDED',
+    action_payload JSONB NOT NULL DEFAULT '{}'::jsonb,
+    reasoning TEXT,
+    executed_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
 
 -- =============================================================================
--- 6. ORDERS TABLE SECURITY
--- Protect customer orders, addresses, phone numbers, and payment details.
--- - Authenticated users can only view their own orders.
--- - Direct public inserts are REVOKED to prevent malicious order injection.
--- - All order creation and status updates happen through verified server routes.
+-- 2. ENABLE ROW LEVEL SECURITY SAFELY
 -- =============================================================================
 
-DROP POLICY IF EXISTS "Allow public insert access to orders" ON public.orders;
-DROP POLICY IF EXISTS "Users can view their own orders" ON public.orders;
-DROP POLICY IF EXISTS "Allow admin manage access to orders" ON public.orders;
+DO $$
+BEGIN
+    IF to_regclass('public.users') IS NOT NULL THEN
+        EXECUTE 'ALTER TABLE public.users ENABLE ROW LEVEL SECURITY';
+    END IF;
 
--- Authenticated users can only read their own orders
-CREATE POLICY "Users can view their own orders" ON public.orders
-    FOR SELECT TO authenticated
-    USING (auth.uid() = user_id);
+    IF to_regclass('public.addresses') IS NOT NULL THEN
+        EXECUTE 'ALTER TABLE public.addresses ENABLE ROW LEVEL SECURITY';
+    END IF;
 
--- (Order creation & updates happen exclusively via supabaseAdmin server-side)
+    IF to_regclass('public.categories') IS NOT NULL THEN
+        EXECUTE 'ALTER TABLE public.categories ENABLE ROW LEVEL SECURITY';
+    END IF;
+
+    IF to_regclass('public.products') IS NOT NULL THEN
+        EXECUTE 'ALTER TABLE public.products ENABLE ROW LEVEL SECURITY';
+    END IF;
+
+    IF to_regclass('public.orders') IS NOT NULL THEN
+        EXECUTE 'ALTER TABLE public.orders ENABLE ROW LEVEL SECURITY';
+    END IF;
+
+    IF to_regclass('public.revenue_events') IS NOT NULL THEN
+        EXECUTE 'ALTER TABLE public.revenue_events ENABLE ROW LEVEL SECURITY';
+    END IF;
+
+    IF to_regclass('public.recovery_cases') IS NOT NULL THEN
+        EXECUTE 'ALTER TABLE public.recovery_cases ENABLE ROW LEVEL SECURITY';
+    END IF;
+
+    IF to_regclass('public.agent_actions') IS NOT NULL THEN
+        EXECUTE 'ALTER TABLE public.agent_actions ENABLE ROW LEVEL SECURITY';
+    END IF;
+END $$;
 
 -- =============================================================================
--- 7. PAHADI AI & REVENUE RECOVERY TABLE SECURITY
--- Sensitive business metrics, revenue events, and customer recovery cases
--- must NOT be accessible to regular authenticated customers directly via anon key.
+-- 3. USERS TABLE SECURITY POLICIES
 -- =============================================================================
 
-DROP POLICY IF EXISTS "Allow admin full access to revenue_events" ON public.revenue_events;
-DROP POLICY IF EXISTS "Allow admin full access to recovery_cases" ON public.recovery_cases;
-DROP POLICY IF EXISTS "Allow admin full access to agent_actions" ON public.agent_actions;
+DO $$
+BEGIN
+    IF to_regclass('public.users') IS NOT NULL THEN
+        EXECUTE 'DROP POLICY IF EXISTS "Allow public read access to users profiles" ON public.users';
+        EXECUTE 'DROP POLICY IF EXISTS "Allow users to read their own profile" ON public.users';
+        EXECUTE 'DROP POLICY IF EXISTS "Allow users to update their own profiles" ON public.users';
+        EXECUTE 'DROP POLICY IF EXISTS "Allow users to insert their own profiles" ON public.users';
 
--- By not granting SELECT/ALL to 'authenticated' or 'public', direct client access
--- is blocked. Server-side APIs (using supabaseAdmin / service-role) retain full access.
+        EXECUTE 'CREATE POLICY "Allow users to read their own profile" ON public.users FOR SELECT TO authenticated USING (auth.uid()::text = id::text)';
+        EXECUTE 'CREATE POLICY "Allow users to update their own profiles" ON public.users FOR UPDATE TO authenticated USING (auth.uid()::text = id::text) WITH CHECK (auth.uid()::text = id::text)';
+        EXECUTE 'CREATE POLICY "Allow users to insert their own profiles" ON public.users FOR INSERT TO authenticated WITH CHECK (auth.uid()::text = id::text)';
+    END IF;
+END $$;
 
--- Completed security hardening verification notice
+-- =============================================================================
+-- 4. ADDRESSES TABLE SECURITY POLICIES
+-- =============================================================================
+
+DO $$
+BEGIN
+    IF to_regclass('public.addresses') IS NOT NULL THEN
+        EXECUTE 'DROP POLICY IF EXISTS "Users can manage their own addresses" ON public.addresses';
+        EXECUTE 'DROP POLICY IF EXISTS "Users can view their own addresses" ON public.addresses';
+        EXECUTE 'DROP POLICY IF EXISTS "Users can insert their own addresses" ON public.addresses';
+        EXECUTE 'DROP POLICY IF EXISTS "Users can update their own addresses" ON public.addresses';
+        EXECUTE 'DROP POLICY IF EXISTS "Users can delete their own addresses" ON public.addresses';
+
+        EXECUTE 'CREATE POLICY "Users can manage their own addresses" ON public.addresses FOR ALL TO authenticated USING (auth.uid()::text = user_id::text) WITH CHECK (auth.uid()::text = user_id::text)';
+    END IF;
+END $$;
+
+-- =============================================================================
+-- 5. CATEGORIES TABLE SECURITY POLICIES
+-- =============================================================================
+
+DO $$
+BEGIN
+    IF to_regclass('public.categories') IS NOT NULL THEN
+        EXECUTE 'DROP POLICY IF EXISTS "Allow public read access to categories" ON public.categories';
+        EXECUTE 'DROP POLICY IF EXISTS "Allow admin manage access to categories" ON public.categories';
+
+        EXECUTE 'CREATE POLICY "Allow public read access to categories" ON public.categories FOR SELECT TO public USING (true)';
+    END IF;
+END $$;
+
+-- =============================================================================
+-- 6. PRODUCTS TABLE SECURITY POLICIES
+-- =============================================================================
+
+DO $$
+BEGIN
+    IF to_regclass('public.products') IS NOT NULL THEN
+        EXECUTE 'DROP POLICY IF EXISTS "Allow public read access to products" ON public.products';
+        EXECUTE 'DROP POLICY IF EXISTS "Allow public read active products" ON public.products';
+        EXECUTE 'DROP POLICY IF EXISTS "Allow admin manage access to products" ON public.products';
+
+        EXECUTE 'CREATE POLICY "Allow public read active products" ON public.products FOR SELECT TO public USING (status = ''Active'')';
+    END IF;
+END $$;
+
+-- =============================================================================
+-- 7. ORDERS TABLE SECURITY POLICIES
+-- =============================================================================
+
+DO $$
+BEGIN
+    IF to_regclass('public.orders') IS NOT NULL THEN
+        EXECUTE 'DROP POLICY IF EXISTS "Allow public insert access to orders" ON public.orders';
+        EXECUTE 'DROP POLICY IF EXISTS "Users can view their own orders" ON public.orders';
+        EXECUTE 'DROP POLICY IF EXISTS "Allow admin manage access to orders" ON public.orders';
+
+        EXECUTE 'CREATE POLICY "Users can view their own orders" ON public.orders FOR SELECT TO authenticated USING (auth.uid()::text = user_id::text)';
+    END IF;
+END $$;
+
+-- =============================================================================
+-- 8. PAHADI AI & REVENUE RECOVERY TABLE SECURITY POLICIES
+-- =============================================================================
+
+DO $$
+BEGIN
+    IF to_regclass('public.revenue_events') IS NOT NULL THEN
+        EXECUTE 'DROP POLICY IF EXISTS "Allow admin full access to revenue_events" ON public.revenue_events';
+    END IF;
+
+    IF to_regclass('public.recovery_cases') IS NOT NULL THEN
+        EXECUTE 'DROP POLICY IF EXISTS "Allow admin full access to recovery_cases" ON public.recovery_cases';
+    END IF;
+
+    IF to_regclass('public.agent_actions') IS NOT NULL THEN
+        EXECUTE 'DROP POLICY IF EXISTS "Allow admin full access to agent_actions" ON public.agent_actions';
+    END IF;
+END $$;
+
+-- Output confirmation
 SELECT 'Pahadi Vibes security hardening policies successfully applied.' AS status;
