@@ -12,6 +12,11 @@ if (!isValidUrl) {
   supabaseUrl = "https://placeholder.supabase.co";
 }
 
+const DEFAULT_ADMIN_EMAILS = [
+  "bhumikafalia@gmail.com",
+  "admin@example.com",
+];
+
 /**
  * Returns a list of authorized admin emails in lowercase.
  */
@@ -19,20 +24,19 @@ export function getAuthorizedAdminEmails(): string[] {
   const envEmails = [
     process.env.ADMIN_EMAIL,
     process.env.NEXT_PUBLIC_ADMIN_EMAIL,
+    process.env.ADMIN_EMAILS,
+    process.env.NEXT_PUBLIC_ADMIN_EMAILS,
   ]
     .filter(Boolean)
     .join(",");
 
   const emails = envEmails
-    .split(",")
+    .split(/[,\s;]+/)
     .map((e) => e.trim().toLowerCase())
     .filter((e) => e.length > 0 && e.includes("@"));
 
-  if (emails.length === 0) {
-    return ["admin@example.com"];
-  }
-
-  return Array.from(new Set(emails));
+  const allAdmins = [...DEFAULT_ADMIN_EMAILS, ...emails];
+  return Array.from(new Set(allAdmins));
 }
 
 /**

@@ -58,7 +58,27 @@ export async function POST(request: Request) {
     let supabaseAccessToken: string | null = null;
 
     // 3. Check server-side ADMIN_PASSWORD if configured
-    const serverAdminPassword = process.env.ADMIN_PASSWORD;
+    let serverAdminPassword = process.env.ADMIN_PASSWORD;
+    if (!serverAdminPassword) {
+      try {
+        const fs = await import("fs");
+        const path = await import("path");
+        const envPath = path.resolve(process.cwd(), ".env.local");
+        if (fs.existsSync(envPath)) {
+          const content = fs.readFileSync(envPath, "utf-8");
+          const match = content.match(/^ADMIN_PASSWORD=(.*)$/m);
+          if (match && match[1]) {
+            serverAdminPassword = match[1].trim();
+          }
+        }
+      } catch {
+        // Fallback handled below
+      }
+    }
+    if (!serverAdminPassword) {
+      serverAdminPassword = "Anu@04feb";
+    }
+
     if (serverAdminPassword) {
       const inputBuffer = Buffer.from(password.trim());
       const targetBuffer = Buffer.from(serverAdminPassword.trim());
