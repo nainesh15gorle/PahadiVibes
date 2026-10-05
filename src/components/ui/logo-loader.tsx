@@ -28,7 +28,7 @@ export function LogoLoader() {
         <motion.div
           animate={{ scale: [0.95, 1.05, 0.95], opacity: [0.7, 1, 0.7] }}
           transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-          className="relative w-40 h-12"
+          className="relative w-24 h-24"
         >
           <Image 
             src="/logo.png" 

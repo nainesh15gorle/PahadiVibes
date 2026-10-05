@@ -69,9 +69,9 @@ export function Navbar() {
             <Image 
               src="/logo-cropped.png" 
               alt="Pahadi Vibes Logo" 
-              width={560} 
-              height={219} 
-              className="w-auto object-contain transition-all duration-500 h-8 md:h-11 mix-blend-multiply" 
+              width={500} 
+              height={500} 
+              className="w-auto object-contain transition-all duration-500 h-12 md:h-16 mix-blend-multiply" 
               priority 
               quality={95}
             />

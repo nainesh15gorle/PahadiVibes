@@ -86,8 +86,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       {/* Brand logo container */}
       <div className="p-6 flex items-center justify-between border-b border-[#C8A951]/10">
         <Link href="/admin/dashboard" className="flex items-center gap-3 overflow-hidden">
-          <div className="relative w-48 h-20 mix-blend-screen -ml-4" style={{ filter: 'invert(1) hue-rotate(180deg)' }}>
-            <Image src="/logo.png" alt="Pahadi Vibes Logo" fill className="object-contain scale-[1.8]" priority />
+          <div className="relative w-16 h-16">
+            <Image src="/logo.png" alt="Pahadi Vibes Logo" fill className="object-contain" priority />
           </div>
         </Link>
         <button className="lg:hidden text-[#F5F5F5] hover:text-[#C8A951] transition-colors" onClick={() => setMobileMenuOpen(false)}>

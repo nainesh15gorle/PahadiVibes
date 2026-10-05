@@ -34,9 +34,9 @@ export function Footer() {
               <Image 
                 src="/logo-cropped.png" 
                 alt="Pahadi Vibes Logo" 
-                width={140} 
-                height={42} 
-                className="h-8 md:h-12 w-auto object-contain mix-blend-multiply" 
+                width={500} 
+                height={500} 
+                className="h-12 md:h-16 w-auto object-contain mix-blend-multiply" 
               />
             </Link>
             <p className="text-muted-foreground leading-relaxed text-xs md:text-sm pr-4 md:pr-0 max-w-sm">
