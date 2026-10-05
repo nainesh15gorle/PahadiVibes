@@ -150,7 +150,7 @@ export default function Home() {
               className="lg:w-1/2 relative h-[300px] md:h-[600px] w-full mt-4 md:mt-0 will-change-transform transform-gpu"
             >
               <div className="absolute inset-0 bg-gradient-to-tr from-primary/20 to-transparent rounded-full blur-3xl opacity-50 mix-blend-multiply" />
-              <div className="relative w-full h-full border border-border/50 bg-card shadow-2xl overflow-hidden group">
+              <div className="relative w-full h-full glass-card overflow-hidden group p-2 rounded-[32px]">
                 <Image
                   src="/turquoise-mandala.jpg" 
                   alt="History of Mandala Art"

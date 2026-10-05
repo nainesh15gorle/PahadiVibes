@@ -821,13 +821,13 @@ export default function CartPage() {
 
               {/* Summary card right side */}
               <div className="lg:col-span-1">
-                <div className="glass rounded-none p-4 sm:p-6 shadow-md border-border/60 sticky top-28 space-y-6">
-                  <h2 className="font-heading text-xl font-bold border-b border-border pb-3">Order Items</h2>
+                <div className="glass-panel p-4 sm:p-6 sticky top-28 space-y-6">
+                  <h2 className="font-heading text-xl font-bold border-b border-border/40 pb-3">Order Items</h2>
                   
                   <div className="max-h-64 overflow-y-auto divide-y divide-border/40 pr-2">
                     {cart.map((item) => (
                       <div key={item.id} className="py-3 flex gap-3 items-center">
-                        <div className="relative w-12 h-12 bg-card border border-border/40 overflow-hidden rounded flex-shrink-0">
+                        <div className="relative w-12 h-12 bg-white/10 dark:bg-black/10 border border-white/10 overflow-hidden rounded-xl flex-shrink-0">
                           <Image src={item.image || "https://images.unsplash.com/photo-1549469742-1e9d89d46d0a?q=80&w=100&auto=format&fit=crop"} alt={item.name} fill className="object-cover" />
                         </div>
                         <div className="flex-1 min-w-0 text-left">
@@ -859,8 +859,8 @@ export default function CartPage() {
             >
               <div className="lg:col-span-2 space-y-6">
                 {/* Shipping Review */}
-                <div className="glass rounded-none p-4 sm:p-6 md:p-8 shadow-sm border border-border/60">
-                  <div className="flex justify-between items-center border-b border-border pb-3 mb-4">
+                <div className="glass-panel p-4 sm:p-6 md:p-8">
+                  <div className="flex justify-between items-center border-b border-border/40 pb-3 mb-4">
                     <h2 className="font-heading text-xl font-bold">Shipping Address Details</h2>
                     <button 
                       onClick={() => {
@@ -891,14 +891,14 @@ export default function CartPage() {
                 </div>
 
                 {/* Items Review */}
-                <div className="glass rounded-none p-4 sm:p-6 md:p-8 shadow-sm border border-border/60">
-                  <h2 className="font-heading text-xl font-bold border-b border-border pb-3 mb-4">Review Items in Order</h2>
+                <div className="glass-panel p-4 sm:p-6 md:p-8">
+                  <h2 className="font-heading text-xl font-bold border-b border-border/40 pb-3 mb-4">Review Items in Order</h2>
                   
                   <div className="divide-y divide-border/40">
                     {cart.map((item) => (
                       <div key={item.id} className="py-4 flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
                         <div className="flex gap-4 items-center">
-                          <div className="relative w-16 h-16 bg-card border border-border/40 overflow-hidden rounded-none flex-shrink-0">
+                          <div className="relative w-16 h-16 bg-white/10 dark:bg-black/10 border border-white/10 overflow-hidden rounded-xl flex-shrink-0">
                             <Image src={item.image || "https://images.unsplash.com/photo-1549469742-1e9d89d46d0a?q=80&w=150&auto=format&fit=crop"} alt={item.name} fill className="object-cover" />
                           </div>
                           <div className="text-left">

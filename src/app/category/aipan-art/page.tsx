@@ -70,7 +70,7 @@ export default function AipanArtCategory() {
               transition={{ delay: idx * 0.1, duration: 0.6 }}
               className="group flex flex-col"
             >
-              <div className="relative aspect-square overflow-hidden bg-card mb-4 shadow-sm border border-border/50 group-hover:shadow-xl group-hover:border-primary/30 transition-all duration-500">
+              <div className="relative aspect-square overflow-hidden glass-card mb-4 group-hover:border-primary/40 p-2 rounded-[24px]">
                 {/* Badge */}
                 {(product.bestseller || product.bestSeller) && (
                   <div className="absolute top-2.5 left-2.5 z-20">

@@ -106,7 +106,7 @@ export default function ProductDetail({ params }: { params: Promise<{ id: string
           
           {/* Gallery */}
           <div className="flex flex-col gap-3">
-            <div className="relative aspect-square w-full bg-card overflow-hidden border border-border">
+            <div className="relative aspect-square w-full glass-card overflow-hidden p-2 rounded-3xl">
               <Image 
                 src={images[activeImage]} 
                 alt={product.name} 
@@ -155,7 +155,7 @@ export default function ProductDetail({ params }: { params: Promise<{ id: string
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.6, delay: 0.2 }}
-            className="flex flex-col"
+            className="flex flex-col glass-panel p-6 sm:p-8 lg:p-10 h-fit"
           >
             <div className="flex items-center justify-between mb-4">
               <span className="text-sm text-primary tracking-widest uppercase font-medium">Limited Edition</span>

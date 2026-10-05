@@ -25,7 +25,7 @@ function PolicyCard({ title, icon: Icon, badgeText, badgeColor, isOpen, onToggle
   return (
     <motion.div 
       layout="position"
-      className="border border-border/50 bg-card/75 dark:bg-card/40 backdrop-blur-md p-6 rounded-2xl shadow-sm hover:shadow-md hover:border-[#primary]/20 transition-all duration-300 flex flex-col justify-between h-full"
+      className="glass-card flex flex-col justify-between h-full p-6"
     >
       <div 
         className="flex items-start justify-between cursor-pointer md:cursor-default"
@@ -355,7 +355,7 @@ export default function ShippingReturnsPage() {
           whileInView={{ opacity: 1 }}
           viewport={{ once: true }}
           transition={{ duration: 0.8 }}
-          className="bg-card/40 border border-border/50 rounded-2xl p-6 md:p-10 mb-16 text-center"
+          className="glass-panel p-6 md:p-10 mb-16 text-center"
         >
           <h3 className="font-heading text-2xl md:text-3xl font-bold mb-3">Transit Damage Claim Workflow</h3>
           <p className="text-muted-foreground text-xs md:text-sm max-w-xl mx-auto mb-10">
@@ -410,7 +410,7 @@ export default function ShippingReturnsPage() {
             {faqs.map((faq, idx) => (
               <div 
                 key={idx} 
-                className="border border-border/50 bg-card/45 rounded-xl overflow-hidden transition-all duration-300"
+                className="glass-card overflow-hidden"
               >
                 <button
                   onClick={() => setActiveFaq(activeFaq === idx ? null : idx)}
@@ -453,7 +453,7 @@ export default function ShippingReturnsPage() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
-          className="max-w-xl mx-auto text-center bg-card/60 border border-border/60 p-8 rounded-2xl backdrop-blur-md relative"
+          className="max-w-xl mx-auto text-center glass-panel p-8 relative"
         >
           <div className="absolute -top-6 left-1/2 -translate-x-1/2 p-3 bg-primary text-primary-foreground rounded-full shadow-lg border border-primary-foreground/20">
             <Mail className="w-5 h-5" />
