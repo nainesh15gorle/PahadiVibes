@@ -107,8 +107,8 @@ function SuccessPageContent() {
     <motion.div
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
-      transition={{ duration: 0.5 }}
-      className="max-w-2xl mx-auto glass rounded-none p-6 md:p-10 text-center shadow-2xl relative overflow-hidden border border-border/60"
+      transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+      className="max-w-2xl mx-auto glass rounded-none p-6 md:p-10 text-center shadow-2xl relative overflow-hidden border border-border/60 will-change-transform transform-gpu"
     >
       {/* Decorative Blur Background elements */}
       <div className="absolute -top-20 -left-20 w-40 h-40 bg-primary/10 rounded-full blur-3xl" />

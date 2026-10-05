@@ -199,14 +199,14 @@ export function SearchOverlay({ isOpen, onClose }: SearchOverlayProps) {
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.3 }}
-          className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-md flex flex-col justify-start pt-16 md:pt-24"
+          className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-md flex flex-col justify-start pt-16 md:pt-24 will-change-[opacity]"
         >
           <motion.div
             initial={{ y: -30, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: -30, opacity: 0 }}
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
-            className="w-full max-w-4xl mx-auto bg-background/95 md:rounded-2xl border border-border/80 shadow-2xl flex flex-col max-h-[85vh] overflow-hidden"
+            className="w-full max-w-4xl mx-auto bg-background/95 md:rounded-2xl border border-border/80 shadow-2xl flex flex-col max-h-[85vh] overflow-hidden will-change-transform transform-gpu"
           >
             {/* Header Search Input */}
             <div className="flex items-center justify-between border-b border-border/60 p-4 md:p-6 gap-4">

@@ -57,7 +57,7 @@ export function Navbar() {
           {/* Mobile Menu Button */}
           <motion.button 
             whileTap={{ scale: 0.92 }}
-            className="md:hidden w-11 h-11 flex items-center justify-center text-foreground/60 hover:text-primary transition-colors focus:outline-none"
+            className="md:hidden w-11 h-11 flex items-center justify-center text-foreground/60 hover:text-primary transition-colors focus:outline-none will-change-transform transform-gpu"
             onClick={() => setMobileMenuOpen(true)}
             aria-label="Open menu"
           >
@@ -95,13 +95,13 @@ export function Navbar() {
             <motion.button 
               whileTap={{ scale: 0.92 }}
               onClick={() => setSearchOpen(true)}
-              className="w-11 h-11 flex items-center justify-center text-foreground/75 hover:text-primary transition-colors focus:outline-none"
+              className="w-11 h-11 flex items-center justify-center text-foreground/75 hover:text-primary transition-colors focus:outline-none will-change-transform transform-gpu"
               aria-label="Search products"
             >
               <Search className="w-6 h-6 stroke-[1.5]" />
             </motion.button>
             
-            <motion.div whileTap={{ scale: 0.92 }}>
+            <motion.div whileTap={{ scale: 0.92 }} className="will-change-transform transform-gpu">
               <Link href="/cart" className="w-11 h-11 flex items-center justify-center text-foreground/75 hover:text-primary transition-colors relative focus:outline-none" aria-label="Shopping Cart">
                 <ShoppingBag className="w-6 h-6 stroke-[1.5]" />
                 {totalItems > 0 && (
@@ -133,7 +133,7 @@ export function Navbar() {
               animate={{ x: 0 }}
               exit={{ x: "-100%" }}
               transition={{ type: "spring", bounce: 0, duration: 0.35 }}
-              className="fixed left-0 top-0 bottom-0 z-50 bg-background flex flex-col md:hidden h-[100dvh] w-[82vw] max-w-[320px] border-r border-border/40 shadow-2xl overflow-hidden"
+              className="fixed left-0 top-0 bottom-0 z-50 bg-background flex flex-col md:hidden h-[100dvh] w-[82vw] max-w-[320px] border-r border-border/40 shadow-2xl overflow-hidden will-change-transform transform-gpu"
             >
               {/* Drawer Header */}
               <div className="p-4 flex justify-between items-center border-b border-border/40 flex-shrink-0 bg-background">

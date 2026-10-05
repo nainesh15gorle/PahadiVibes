@@ -389,7 +389,8 @@ export default function CartPage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0 }}
-              className="text-center py-20 px-4 flex flex-col items-center justify-center glass rounded-none max-w-2xl mx-auto shadow-xl shadow-black/5"
+              transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+              className="text-center py-20 px-4 flex flex-col items-center justify-center glass rounded-none max-w-2xl mx-auto shadow-xl shadow-black/5 will-change-transform transform-gpu"
             >
               <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center text-primary mb-6 animate-pulse">
                 <ShoppingCart className="w-10 h-10" />
@@ -415,7 +416,8 @@ export default function CartPage() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="grid grid-cols-1 lg:grid-cols-3 gap-8"
+              transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+              className="grid grid-cols-1 lg:grid-cols-3 gap-8 will-change-[opacity]"
             >
               {/* Cart Items List */}
               <div className="lg:col-span-2 space-y-4">
@@ -436,8 +438,9 @@ export default function CartPage() {
                       layout
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, x: -100 }}
-                      className="glass rounded-none p-4 flex flex-col sm:flex-row gap-4 items-center justify-between shadow-sm border border-border/60"
+                      exit={{ opacity: 0, x: -50 }}
+                      transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+                      className="glass rounded-none p-4 flex flex-col sm:flex-row gap-4 items-center justify-between shadow-sm border border-border/60 will-change-transform transform-gpu"
                     >
                       <div className="flex gap-4 items-center w-full sm:w-auto">
                         <div className="relative w-20 sm:w-24 h-20 sm:h-24 bg-card border border-border/50 flex-shrink-0 overflow-hidden rounded-none">

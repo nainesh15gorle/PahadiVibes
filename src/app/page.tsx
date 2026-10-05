@@ -3,19 +3,20 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { motion, useScroll, useTransform } from "framer-motion";
+import { motion, useScroll, useTransform, useReducedMotion } from "framer-motion";
 import { useRef } from "react";
 import { ArrowRight, Star, Heart, Eye } from "lucide-react";
 import { AipanPattern } from "@/components/ui/aipan-pattern";
 
 export default function Home() {
   const containerRef = useRef<HTMLDivElement>(null);
+  const shouldReduceMotion = useReducedMotion();
   const { scrollYProgress } = useScroll({
     target: containerRef,
     offset: ["start start", "end start"],
   });
 
-  const y = useTransform(scrollYProgress, [0, 1], ["0%", "50%"]);
+  const y = useTransform(scrollYProgress, [0, 1], ["0%", shouldReduceMotion ? "0%" : "50%"]);
   const opacity = useTransform(scrollYProgress, [0, 0.5], [1, 0]);
 
   // Placeholder images - using mandala-related searches from Unsplash
@@ -36,7 +37,7 @@ export default function Home() {
       >
         <motion.div 
           style={{ y, opacity }}
-          className="absolute inset-0 z-0"
+          className="absolute inset-0 z-0 will-change-transform transform-gpu"
         >
           {/* 1. Background Image texture */}
           <div 
@@ -56,29 +57,29 @@ export default function Home() {
 
         <div className="relative z-10 container mx-auto px-5 flex flex-col items-center text-center mt-4 md:mt-8">
           <motion.h1 
-            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+            initial={{ opacity: 0, scale: shouldReduceMotion ? 1 : 0.95, y: shouldReduceMotion ? 0 : 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            transition={{ duration: 1, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
-            className="font-heading text-4xl sm:text-5xl md:text-7xl lg:text-8xl text-foreground font-bold max-w-4xl tracking-tight leading-[1.1] md:leading-[1.15]"
+            transition={{ duration: 0.8, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
+            className="font-heading text-4xl sm:text-5xl md:text-7xl lg:text-8xl text-foreground font-bold max-w-4xl tracking-tight leading-[1.1] md:leading-[1.15] will-change-transform transform-gpu"
           >
             Crafted by Hands. <br className="hidden md:block"/>
             <span className="text-primary italic font-light drop-shadow-sm text-[1.4rem] sm:text-4xl md:text-6xl lg:text-7xl">Inspired by Heritage.</span>
           </motion.h1>
           
           <motion.p 
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: shouldReduceMotion ? 0 : 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.5, ease: [0.22, 1, 0.36, 1] }}
-            className="mt-5 text-[13px] sm:text-base md:text-2xl text-foreground/80 max-w-xl font-light tracking-wide leading-relaxed px-2 md:px-0"
+            transition={{ duration: 0.8, delay: 0.3, ease: [0.22, 1, 0.36, 1] }}
+            className="mt-5 text-[13px] sm:text-base md:text-2xl text-foreground/80 max-w-xl font-light tracking-wide leading-relaxed px-2 md:px-0 will-change-transform transform-gpu"
           >
             Discover exquisite Mandala masterpieces created by skilled artisans across India. Sacred geometry meets luxury design.
           </motion.p>
           
           <motion.div 
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: shouldReduceMotion ? 0 : 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.7, ease: [0.22, 1, 0.36, 1] }}
-            className="mt-8 flex flex-col sm:flex-row items-center w-full max-w-[280px] sm:max-w-none sm:w-auto gap-3 md:gap-5"
+            transition={{ duration: 0.8, delay: 0.4, ease: [0.22, 1, 0.36, 1] }}
+            className="mt-8 flex flex-col sm:flex-row items-center w-full max-w-[280px] sm:max-w-none sm:w-auto gap-3 md:gap-5 will-change-transform transform-gpu"
           >
             <Button asChild size="lg" className="rounded-none w-full sm:w-auto bg-primary text-primary-foreground hover:bg-primary/90 px-10 h-12 md:h-14 text-xs tracking-[0.2em] uppercase shadow-md hover:shadow-xl transition-all duration-500 hover:scale-102 ripple-btn">
               <Link href="/collection">Explore Collection</Link>
@@ -99,9 +100,9 @@ export default function Home() {
           <span className="text-[10px] text-primary uppercase tracking-[0.3em] font-medium">Discover</span>
           <div className="w-[1px] h-16 bg-primary/30 relative overflow-hidden">
             <motion.div 
-              animate={{ y: [0, 64, 0] }}
+              animate={{ y: shouldReduceMotion ? 0 : [0, 64, 0] }}
               transition={{ repeat: Infinity, duration: 2.5, ease: "easeInOut" }}
-              className="absolute top-0 left-0 w-full h-1/2 bg-primary"
+              className="absolute top-0 left-0 w-full h-1/2 bg-primary will-change-transform transform-gpu"
             />
           </div>
         </motion.div>
@@ -114,11 +115,11 @@ export default function Home() {
         <div className="container mx-auto px-4 md:px-8">
           <div className="flex flex-col lg:flex-row items-center gap-8 md:gap-16">
             <motion.div 
-              initial={{ opacity: 0, x: -50 }}
+              initial={{ opacity: 0, x: shouldReduceMotion ? 0 : -30 }}
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true, margin: "-100px" }}
-              transition={{ duration: 0.8, ease: "easeOut" }}
-              className="lg:w-1/2 space-y-8 relative z-10"
+              transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+              className="lg:w-1/2 space-y-8 relative z-10 will-change-transform transform-gpu"
             >
               <div className="inline-flex items-center gap-3">
                 <span className="w-12 h-px bg-primary/60"></span>
@@ -142,11 +143,11 @@ export default function Home() {
             </motion.div>
 
             <motion.div 
-              initial={{ opacity: 0, scale: 0.95 }}
+              initial={{ opacity: 0, scale: shouldReduceMotion ? 1 : 0.98 }}
               whileInView={{ opacity: 1, scale: 1 }}
               viewport={{ once: true, margin: "-100px" }}
-              transition={{ duration: 1, ease: "easeOut" }}
-              className="lg:w-1/2 relative h-[300px] md:h-[600px] w-full mt-4 md:mt-0"
+              transition={{ duration: 1, ease: [0.22, 1, 0.36, 1] }}
+              className="lg:w-1/2 relative h-[300px] md:h-[600px] w-full mt-4 md:mt-0 will-change-transform transform-gpu"
             >
               <div className="absolute inset-0 bg-gradient-to-tr from-primary/20 to-transparent rounded-full blur-3xl opacity-50 mix-blend-multiply" />
               <div className="relative w-full h-full border border-border/50 bg-card shadow-2xl overflow-hidden group">
