@@ -390,7 +390,7 @@ export default function CartPage() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-              className="text-center py-20 px-4 flex flex-col items-center justify-center glass rounded-none max-w-2xl mx-auto shadow-xl shadow-black/5 will-change-transform transform-gpu"
+              className="text-center py-20 px-4 flex flex-col items-center justify-center glass-panel max-w-2xl mx-auto will-change-transform transform-gpu"
             >
               <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center text-primary mb-6 animate-pulse">
                 <ShoppingCart className="w-10 h-10" />
@@ -440,10 +440,10 @@ export default function CartPage() {
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, x: -50 }}
                       transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-                      className="glass rounded-none p-4 flex flex-col sm:flex-row gap-4 items-center justify-between shadow-sm border border-border/60 will-change-transform transform-gpu"
+                      className="glass-card p-4 flex flex-col sm:flex-row gap-4 items-center justify-between will-change-transform transform-gpu"
                     >
                       <div className="flex gap-4 items-center w-full sm:w-auto">
-                        <div className="relative w-20 sm:w-24 h-20 sm:h-24 bg-card border border-border/50 flex-shrink-0 overflow-hidden rounded-none">
+                        <div className="relative w-20 sm:w-24 h-20 sm:h-24 bg-white/5 border border-white/10 flex-shrink-0 overflow-hidden rounded-xl">
                           <Image 
                             src={item.image || "https://images.unsplash.com/photo-1549469742-1e9d89d46d0a?q=80&w=200&auto=format&fit=crop"} 
                             alt={item.name} 
@@ -501,8 +501,8 @@ export default function CartPage() {
 
               {/* Order Summary Card */}
               <div className="lg:col-span-1">
-                <div className="glass rounded-none p-4 sm:p-6 shadow-md border-border/60 sticky top-28 space-y-6">
-                  <h2 className="font-heading text-xl font-bold border-b border-border pb-3">Order Summary</h2>
+                <div className="glass-panel p-4 sm:p-6 sticky top-28 space-y-6">
+                  <h2 className="font-heading text-xl font-bold border-b border-border/40 pb-3">Order Summary</h2>
                   
                   <div className="space-y-3 text-sm text-muted-foreground">
                     <div className="flex justify-between">
@@ -560,11 +560,12 @@ export default function CartPage() {
               initial={{ opacity: 0, x: 50 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -50 }}
-              className="grid grid-cols-1 lg:grid-cols-3 gap-8"
+              transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+              className="grid grid-cols-1 lg:grid-cols-3 gap-8 will-change-transform transform-gpu"
             >
               <div className="lg:col-span-2">
-                <div className="glass rounded-none p-4 sm:p-6 md:p-8 shadow-sm border border-border/60">
-                  <div className="flex items-center gap-3 mb-6 border-b border-border pb-4 justify-between">
+                <div className="glass-panel p-4 sm:p-6 md:p-8">
+                  <div className="flex items-center gap-3 mb-6 border-b border-border/40 pb-4 justify-between">
                     <div className="flex items-center gap-3">
                       <button 
                         onClick={() => setStep("cart")}

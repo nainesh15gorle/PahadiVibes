@@ -206,7 +206,7 @@ export function SearchOverlay({ isOpen, onClose }: SearchOverlayProps) {
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: -30, opacity: 0 }}
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
-            className="w-full max-w-4xl mx-auto bg-background/95 md:rounded-2xl border border-border/80 shadow-2xl flex flex-col max-h-[85vh] overflow-hidden will-change-transform transform-gpu"
+            className="w-full max-w-4xl mx-auto glass-panel flex flex-col max-h-[85vh] overflow-hidden will-change-transform transform-gpu"
           >
             {/* Header Search Input */}
             <div className="flex items-center justify-between border-b border-border/60 p-4 md:p-6 gap-4">
@@ -306,9 +306,9 @@ export function SearchOverlay({ isOpen, onClose }: SearchOverlayProps) {
                                     key={product.id}
                                     href={`/product/${product.id}`}
                                     onClick={() => { inputRef.current?.blur(); onClose(); }}
-                                    className="flex items-center gap-4 py-3 hover:bg-black/5 dark:hover:bg-white/5 transition-all duration-200 group px-2 rounded-lg"
+                                    className="flex items-center gap-4 py-3 glass-card group px-3 mb-2"
                                   >
-                                    <div className="relative w-14 h-14 bg-card border border-border/50 overflow-hidden flex-shrink-0 rounded-md">
+                                    <div className="relative w-14 h-14 bg-white/10 dark:bg-black/10 overflow-hidden flex-shrink-0 rounded-xl">
                                       <Image
                                         src={product.images && product.images.length > 0 ? product.images[0] : "https://images.unsplash.com/photo-1549469742-1e9d89d46d0a"}
                                         alt={product.name}
@@ -410,9 +410,9 @@ export function SearchOverlay({ isOpen, onClose }: SearchOverlayProps) {
                                 key={prod.id}
                                 href={`/product/${prod.id}`}
                                 onClick={() => { inputRef.current?.blur(); onClose(); }}
-                                className="flex items-center gap-3 p-3 bg-card hover:bg-black/5 dark:hover:bg-white/5 border border-border/40 rounded-xl transition-all duration-200 group"
+                                className="flex items-center gap-3 p-3 glass-card group"
                               >
-                                <div className="relative w-12 h-12 bg-muted overflow-hidden rounded-md flex-shrink-0">
+                                <div className="relative w-12 h-12 bg-white/10 dark:bg-black/10 overflow-hidden rounded-xl flex-shrink-0">
                                   <Image
                                     src={prod.images && prod.images.length > 0 ? prod.images[0] : "https://images.unsplash.com/photo-1549469742-1e9d89d46d0a"}
                                     alt={prod.name}
@@ -440,7 +440,7 @@ export function SearchOverlay({ isOpen, onClose }: SearchOverlayProps) {
             </div>
 
             {/* Premium Footer Info */}
-            <div className="bg-muted/40 border-t border-border/60 p-4 text-center text-xs text-muted-foreground tracking-wider uppercase font-medium flex-shrink-0">
+            <div className="bg-white/5 dark:bg-black/10 border-t border-white/10 p-4 text-center text-xs text-foreground/60 tracking-wider uppercase font-medium flex-shrink-0 backdrop-blur-md">
               Pahadi Vibes Artisan Collection • Press ESC to close
             </div>
           </motion.div>

@@ -45,9 +45,9 @@ export function Navbar() {
       initial={{ y: -100 }}
       animate={{ y: 0 }}
       transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 border-b h-[72px] md:h-auto flex items-center md:block ${
+      className={`fixed top-4 left-4 right-4 z-50 transition-all duration-500 border-b-0 h-[72px] md:h-auto flex items-center md:block ${
         scrolled
-          ? "glass py-0 md:py-2.5"
+          ? "glass-panel py-0 md:py-2.5"
           : "bg-transparent border-transparent py-0 md:py-3.5"
       }`}
     >
@@ -133,11 +133,11 @@ export function Navbar() {
               animate={{ x: 0 }}
               exit={{ x: "-100%" }}
               transition={{ type: "spring", bounce: 0, duration: 0.35 }}
-              className="fixed left-0 top-0 bottom-0 z-50 bg-background flex flex-col md:hidden h-[100dvh] w-[82vw] max-w-[320px] border-r border-border/40 shadow-2xl overflow-hidden will-change-transform transform-gpu"
+              className="fixed left-4 top-4 bottom-4 z-50 glass-dropdown flex flex-col md:hidden h-[calc(100dvh-32px)] w-[82vw] max-w-[320px] shadow-2xl overflow-hidden will-change-transform transform-gpu"
             >
               {/* Drawer Header */}
-              <div className="p-4 flex justify-between items-center border-b border-border/40 flex-shrink-0 bg-background">
-                <span className="font-heading text-lg font-bold tracking-wider uppercase ml-1">Collections</span>
+              <div className="p-4 flex justify-between items-center border-b border-white/10 dark:border-white/5 flex-shrink-0 bg-transparent">
+                <span className="font-heading text-lg font-bold tracking-wider uppercase ml-1 text-foreground">Collections</span>
                 <button 
                   className="w-10 h-10 flex items-center justify-center text-foreground hover:text-primary transition-colors focus:outline-none"
                   onClick={() => setMobileMenuOpen(false)}
@@ -187,8 +187,8 @@ export function Navbar() {
               </div>
 
               {/* Drawer Footer */}
-              <div className="p-4 border-t border-border/40 bg-muted/30 flex justify-center items-center gap-6 flex-shrink-0">
-                <a href="https://www.instagram.com/bhumijakaphaliya?igsh=dHl4aWh2M281YnRr" target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-full border border-border flex items-center justify-center text-foreground/75 hover:bg-primary hover:text-primary-foreground hover:border-primary transition-colors">
+              <div className="p-4 border-t border-white/10 dark:border-white/5 bg-transparent flex justify-center items-center gap-6 flex-shrink-0">
+                <a href="https://www.instagram.com/bhumijakaphaliya?igsh=dHl4aWh2M281YnRr" target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-full border border-white/20 flex items-center justify-center text-foreground/75 hover:bg-primary hover:text-primary-foreground hover:border-primary transition-colors">
                   <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="20" x="2" y="2" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/></svg>
                 </a>
               </div>

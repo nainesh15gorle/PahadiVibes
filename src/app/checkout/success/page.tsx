@@ -108,7 +108,7 @@ function SuccessPageContent() {
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-      className="max-w-2xl mx-auto glass rounded-none p-6 md:p-10 text-center shadow-2xl relative overflow-hidden border border-border/60 will-change-transform transform-gpu"
+      className="max-w-2xl mx-auto glass-panel p-6 md:p-10 text-center relative overflow-hidden will-change-transform transform-gpu"
     >
       {/* Decorative Blur Background elements */}
       <div className="absolute -top-20 -left-20 w-40 h-40 bg-primary/10 rounded-full blur-3xl" />
@@ -130,7 +130,7 @@ function SuccessPageContent() {
       </p>
 
       {/* Order Info Details Card */}
-      <div className="border border-border/80 bg-background/50 rounded-none p-5 text-left mb-8 space-y-6">
+      <div className="glass-card bg-black/5 dark:bg-white/5 rounded-2xl p-5 text-left mb-8 space-y-6 relative z-10 border-white/20">
         <div className="flex flex-col sm:flex-row justify-between border-b border-border/50 pb-3 gap-2">
           <div>
             <span className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">

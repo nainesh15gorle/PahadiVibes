@@ -115,7 +115,7 @@ export default function CollectionPage() {
                 transition={{ duration: 0.4 }}
                 className="group flex flex-col"
               >
-                <div className="relative aspect-square overflow-hidden bg-card mb-4 shadow-sm border border-border/50 group-hover:shadow-xl group-hover:border-primary/30 transition-all duration-500">
+                <div className="relative aspect-square overflow-hidden glass-card mb-4 group-hover:border-primary/40 rounded-[20px] p-2">
                   {/* Badge */}
                   {(product.bestseller || product.bestSeller) && (
                     <div className="absolute top-2.5 left-2.5 z-20">
