@@ -86,7 +86,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       {/* Brand logo container */}
       <div className="p-6 flex items-center justify-between border-b border-[#C8A951]/10">
         <Link href="/admin/dashboard" className="flex items-center gap-3 overflow-hidden">
-          <div className="relative w-16 h-16">
+          <div className="relative w-20 h-20">
             <Image src="/logo.png" alt="Pahadi Vibes Logo" fill className="object-contain" priority />
           </div>
         </Link>

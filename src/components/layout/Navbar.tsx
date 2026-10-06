@@ -45,7 +45,7 @@ export function Navbar() {
       initial={{ y: -100 }}
       animate={{ y: 0 }}
       transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-      className={`fixed top-4 left-4 right-4 z-50 transition-all duration-500 border-b-0 h-[72px] md:h-auto flex items-center md:block ${
+      className={`fixed top-4 left-4 right-4 z-50 transition-all duration-500 border-b-0 h-[80px] md:h-auto flex items-center md:block ${
         scrolled
           ? "glass-panel py-0 md:py-2.5"
           : "bg-transparent border-transparent py-0 md:py-3.5"
@@ -71,7 +71,7 @@ export function Navbar() {
               alt="Pahadi Vibes Logo" 
               width={500} 
               height={500} 
-              className="w-auto object-contain transition-all duration-500 h-12 md:h-16 mix-blend-multiply" 
+              className="w-auto object-contain transition-all duration-500 h-16 md:h-20 mix-blend-multiply" 
               priority 
               quality={95}
             />

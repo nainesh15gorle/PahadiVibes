@@ -36,7 +36,7 @@ export function Footer() {
                 alt="Pahadi Vibes Logo" 
                 width={500} 
                 height={500} 
-                className="h-12 md:h-16 w-auto object-contain mix-blend-multiply" 
+                className="h-16 md:h-20 w-auto object-contain mix-blend-multiply" 
               />
             </Link>
             <p className="text-muted-foreground leading-relaxed text-xs md:text-sm pr-4 md:pr-0 max-w-sm">
